@@ -1,39 +1,50 @@
 <script setup>
-import { ref, onMounted, onUnmounted, defineEmits } from 'vue';
+import { ref, onMounted, onUnmounted, defineEmits, computed, watch } from 'vue';
 
 const userInput = ref('');
 const emits = defineEmits(['answerSent']);
+const renderedExample = computed(() => `\\(${props.example.example}\\)`);
 
 const sendAnswer = () => {
   
   emits('answerSent', userInput.value); 
   userInput.value = '';
-  
-  
 }
-// Define props
+
 const props = defineProps({
   example: {
-    type: String,
-    default: '',
+    type: Object,
   }
 });
 
-const handleNumDown = (event) => {
-    const isNumericKey = /^[0-9]$/.test(event.key); // Check if the key pressed is a number
-    const isBackspace = event.key === 'Backspace'; // Allow backspace
+watch(
+  () => props.example,
+  () => {
+    renderMathJax();
+  },
+  { immediate: true }
+);
 
-    // If it's not a number and not backspace, prevent the input
-    if (!isNumericKey && !isBackspace) {
-        event.preventDefault();
-    }
+const handleNumDown = (event) => {
+    
 };
+
+function renderMathJax() {
+  if (window.MathJax) {
+    window.MathJax.typesetPromise()
+      .then(() => console.log("MathJax rendered in Example component"))
+      .catch((err) => console.error("MathJax rendering error:", err));
+  } else {
+    console.error("MathJax not loaded.");
+  }
+}
 
 
 // Keydown event handler for enter key
 const handleEnter = (event) => {
   if (event.key === 'Enter') {
     sendAnswer();
+    
   }
 };
 
@@ -41,6 +52,7 @@ const handleEnter = (event) => {
 onMounted(() => {
   window.addEventListener('keydown', handleNumDown);
   window.addEventListener('keydown', handleEnter);
+  renderMathJax();
 });
 
 // Clean up event listeners on unmount
@@ -54,7 +66,7 @@ onUnmounted(() => {
   <div class="flex items-center justify-center mt-60">
     <div class="flex flex-col">
       <p class="text-8xl">
-        {{ example }} =
+        {{ renderedExample }} =
         <input
           type="text"
           v-model="userInput"

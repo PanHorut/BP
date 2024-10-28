@@ -13,6 +13,13 @@ class Example(models.Model):
 
 class Skill(models.Model):
     name = models.CharField(max_length=255)
+    parent_skill = models.ForeignKey(
+        'self',                  
+        null=True,               
+        blank=True,              
+        on_delete=models.SET_NULL,
+        related_name='dependent_skills'
+    )
     
 class ExampleSkill(models.Model):
     example = models.ForeignKey(Example, on_delete=models.CASCADE)

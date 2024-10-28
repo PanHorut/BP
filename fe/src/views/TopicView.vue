@@ -1,19 +1,65 @@
 <script setup>
+import { ref, defineProps, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
+
 import SubTopic from '@/components/SubTopic.vue';
+  
+const props = defineProps({
+    id: {
+    type: Number,
+    required: true
+    }
+  })
+
+const topic = ref(null);
+const subtopics = ref([]);
+const selectedSubtopics = ref([]);
+
+
+onMounted(async () => {
+  try {
+    const response = await axios.get(`http://localhost:8000/api/skill/${props.id}/`);
+    topic.value = response.data.skill;
+    subtopics.value = response.data.child_skills;
+  } catch (error) {
+    console.error("Error fetching skills:", error)
+  }
+})
+
+const handleToggle = ({ id, checked }) => {
+  if (checked) {
+    selectedSubtopics.value.push(id); 
+  } else {
+    selectedSubtopics.value.splice(id, 1); 
+  }
+};
+
+const router = useRouter()
+
+function startPracticing() {
+    router.push({ name: 'examples', query: { topics: JSON.stringify(selectedSubtopics.value) } });
+}
+
+
 </script>
 
 <template>
-    <h1 class="text-5xl text-center font-bold mt-6">Zlomky</h1>
-    <p class="text-center text-2xl mt-20 ">Co vše chceš procvičit?</p>
-    <div class="flex justify-center p-11">
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-20 gap-y-10">
-            <SubTopic subtopic="Sčítání a odčítání"></SubTopic>
-            <SubTopic subtopic="Násobení a dělení"></SubTopic>
-            <SubTopic subtopic="Úprava zlomků"></SubTopic>
-        </div>
+    <div class="flex flex-col items-center">
+      <h1 class="text-4xl font-bold text-primary my-8" v-if="topic">{{ topic.name }}</h1>
+      <p class="text-secondary text-xl">Vyberte, co vše chcete procvičit</p>
+      <div class="flex my-8">
+        <SubTopic 
+          v-for="(subtopic, index) in subtopics" 
+          :key="index" 
+          :subtopic="subtopic" 
+          @toggle="handleToggle" 
+          class="mr-8" 
+        />
+      </div>
+      <div @click="startPracticing" 
+        class="cursor-pointer bg-tertiary px-6 py-3 rounded-2xl font-bold text-primary text-2xl">
+        Začít procvičovat
     </div>
-    <div class="flex justify-center">
-        <RouterLink to="/examples" class="text-center text-4xl mt-20 border-4 border-blue-600 p-5 rounded-3xl cursor-pointer" >Začít procvičování</RouterLink>
     </div>
 </template>

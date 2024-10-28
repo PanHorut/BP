@@ -1,5 +1,5 @@
 <script setup>
-import Topics from '@/components/Topics.vue';
+import Topics from '@/components/MainMenu/Topics.vue';
 import { RouterLink, useRoute } from 'vue-router';
 
 import { ref, onMounted } from 'vue';

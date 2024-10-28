@@ -14,15 +14,17 @@ const router = createRouter({
     },
 
     {
-      path: '/topics',
+      path: '/topic/:id',
       name: 'topic',
       component: TopicView,
+      props: true
     },
 
     {
       path: '/examples',
-      name: 'example',
+      name: 'examples',
       component: ExampleView,
+      props: true
     },
 
     {
