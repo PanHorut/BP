@@ -7,9 +7,12 @@ class Task(models.Model):
 
 class Example(models.Model):
     example = models.CharField(max_length=255)
-    answer = models.CharField(max_length=255)
     input_type = models.CharField(max_length=255)
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
+
+class Answer(models.Model):
+    example = models.ForeignKey(Example, on_delete=models.CASCADE, related_name='answers')
+    answer = models.CharField(max_length=255)
 
 class Skill(models.Model):
     name = models.CharField(max_length=255)
@@ -24,5 +27,10 @@ class Skill(models.Model):
 class ExampleSkill(models.Model):
     example = models.ForeignKey(Example, on_delete=models.CASCADE)
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
+
+class Student(models.Model):
+    username = models.CharField(max_length=255)
+    passphrase = models.CharField(max_length=255)
+
 
 

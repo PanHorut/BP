@@ -10,10 +10,10 @@ const bround = computed(() => `\\(( )\\)`);
 const bsquare = computed(() => `\\([ ]\\)`);
 const sqroot = computed(() => `\\(\\sqrt{a}\\)`);
 const root = computed(() => `\\(\\sqrt[n]{a}\\)`);
-
-
-
-
+const isin = computed(() => `\\(\\in\\)`);
+const notin = computed(() => `\\(\\notin\\)`);
+const inf = computed(() => `\\(\\infty\\)`);
+const real = computed(() => `\\(\\mathbb{R}\\)`);
 
 function renderMathJax() {
   if (window.MathJax) {
@@ -25,9 +25,7 @@ onMounted(() => {
   renderMathJax();
 });
 
-watch(frac, () => {
-  renderMathJax();
-});
+
 
 function insertTextIntoActiveInput(text) {
   const activeElement = document.activeElement;
@@ -103,6 +101,30 @@ function insertTextIntoActiveInput(text) {
               @click="insertTextIntoActiveInput('\\sqrt[n]{a}')" 
               class="w-16 h-16 bg-primary rounded-xl text-white font-black text-3xl flex items-center justify-center" 
               v-html="root">
+            </button>
+
+            <button 
+              @click="insertTextIntoActiveInput('\\in')" 
+              class="w-16 h-16 bg-primary rounded-xl text-white font-black text-3xl flex items-center justify-center" 
+              v-html="isin">
+            </button>
+
+            <button 
+              @click="insertTextIntoActiveInput('\\notin')" 
+              class="w-16 h-16 bg-primary rounded-xl text-white font-black text-3xl flex items-center justify-center" 
+              v-html="notin">
+            </button>
+
+            <button 
+              @click="insertTextIntoActiveInput('\\infty')" 
+              class="w-16 h-16 bg-primary rounded-xl text-white font-black text-3xl flex items-center justify-center" 
+              v-html="inf">
+            </button>
+
+            <button 
+              @click="insertTextIntoActiveInput('\\mathbb{R}')" 
+              class="w-16 h-16 bg-primary rounded-xl text-white font-black text-3xl flex items-center justify-center" 
+              v-html="real">
             </button>
         </div>
         </div>

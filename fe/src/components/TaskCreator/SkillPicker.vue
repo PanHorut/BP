@@ -40,7 +40,7 @@ const applySelection = () => {
 
 onMounted(async () => {
   try {
-    const response = await axios.get('http://localhost:8000/api/get-all-skills/') // Adjust the URL as needed
+    const response = await axios.get('http://localhost:8000/api/leaf-skills/') // Adjust the URL as needed
     items.value = response.data
   } catch (error) {
     console.error("Error fetching skills:", error)

@@ -6,6 +6,7 @@ from .models import Example
 from .models import Skill
 from .models import ExampleSkill
 from .models import Task
+from .models import Answer
 from .serializers import ExampleSerializer
 from .serializers import SkillSerializer
 from .serializers import ExampleSkillSerializer
@@ -24,34 +25,52 @@ class ExampleSkillList(generics.ListCreateAPIView):
     queryset = ExampleSkill.objects.all()
     serializer_class = ExampleSkillSerializer
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Task, Example, Answer, Skill, ExampleSkill
+from .serializers import ExampleSerializer, AnswerSerializer
+
 @api_view(['POST'])
 def addExample(request):
-    # Extract skill IDs and task name from the request data
+    # Extract skill IDs, task name, example details, and answer from the request data
     skill_ids = request.data.get('skill_ids', [])
-    task_name = request.data.get('task_name')  # Get the task name from the request data
+    task_name = request.data.get('task_name')
+    example_text = request.data.get('example')  # The example content
+    input_type = request.data.get('input_type')  # The input type for the example
+    answer_text = request.data.get('answer')  # The answer text
 
-    # Create the Task instance
-    if task_name:
-        task_instance, created = Task.objects.get_or_create(name=task_name)  # Avoid duplicates based on name
-    else:
+    # Ensure the task name and example are provided
+    if not task_name:
         return Response({"error": "Task name is required"}, status=status.HTTP_400_BAD_REQUEST)
+    if not example_text or not input_type:
+        return Response({"error": "Example text and input type are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Prepare the example data with the task ID
-    example_data = request.data.copy()
-    example_data['task'] = task_instance.id  # Assign task ID to the example
+    # Create or retrieve the Task instance
+    task_instance, created = Task.objects.get_or_create(name=task_name)
 
     # Create the Example instance
-    serializer = ExampleSerializer(data=example_data)
-    if serializer.is_valid():
-        example_instance = serializer.save()  # Save the example with the associated task
+    example_data = {
+        'example': example_text,
+        'input_type': input_type,
+        'task': task_instance.id  # Link to the task instance
+    }
+    example_serializer = ExampleSerializer(data=example_data)
+    if example_serializer.is_valid():
+        example_instance = example_serializer.save()
 
-        # Create ExampleSkill instances for each skill
+        # If an answer is provided, create the Answer instance
+        if answer_text:
+            Answer.objects.create(example=example_instance, answer=answer_text)
+
+        # Create ExampleSkill instances for each skill ID provided
         for skill_id in skill_ids:
             ExampleSkill.objects.create(example=example_instance, skill_id=skill_id)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(example_serializer.data, status=status.HTTP_201_CREATED)
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(example_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(['GET'])
@@ -65,6 +84,14 @@ def get_parent_skills(request):
 
     parent_skills = Skill.objects.filter(parent_skill__isnull=True)
     serializer = SkillSerializer(parent_skills, many=True)
+    
+    return Response(serializer.data, status=200)
+
+@api_view(['GET'])
+def get_leaf_skills(request):
+    leaf_skills = Skill.objects.filter(dependent_skills__isnull=True)
+    
+    serializer = SkillSerializer(leaf_skills, many=True)
     
     return Response(serializer.data, status=200)
 
@@ -98,13 +125,19 @@ def get_examples(request):
     # Get all examples that have the given skill IDs
     examples = Example.objects.filter(exampleskill__skill__id__in=skill_ids).distinct()
 
-    # Serialize the examples (you can adjust the serialization according to your needs)
+    # Serialize the examples along with their answers
     example_data = [
         {
             "id": example.id,
             "example": example.example,
-            "answer": example.answer,
-            "input_type": example.input_type
+            "input_type": example.input_type,
+            "answers": [
+                {
+                    "id": answer.id,
+                    "answer": answer.answer
+                }
+                for answer in example.answers.all()
+            ]
         }
         for example in examples
     ]

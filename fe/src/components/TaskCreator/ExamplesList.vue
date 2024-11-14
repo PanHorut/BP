@@ -49,7 +49,7 @@ const submitExamples = async () => {
       const response = await axios.post('http://localhost:8000/api/add-example/', {
         example: example.example, 
         answer: example.answer,
-        input_type: props.inputType,         
+        input_type: example.input_type,         
         skill_ids: props.selectedSkills.map(skill => skill.id), 
         task_name: props.taskName
       });

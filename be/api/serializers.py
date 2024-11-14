@@ -4,6 +4,7 @@ from .models import Example
 from .models import Skill
 from .models import ExampleSkill
 from .models import Task
+from .models import Answer
 
 
 class ExampleSerializer(serializers.ModelSerializer):
@@ -24,4 +25,9 @@ class ExampleSkillSerializer(serializers.ModelSerializer):
 class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
+        fields = '__all__' 
+
+class AnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Answer
         fields = '__all__' 
