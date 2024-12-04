@@ -17,10 +17,10 @@ function insertTextIntoActiveInput(text) {
 </script>
 
 <template>
-    <div @mousedown.prevent class="fixed bottom-0 w-full pb-10 border-t-4 border-primary">
+    <div @mousedown.prevent class="fixed left-0 h-full pb-10 border-t-4 border-r-4 border-primary">
         <div class="flex flex-col items-center">
             <div class="text-center text-primary text-3xl font-black my-4">Speciální znaky</div>
-            <div class="flex justify-center gap-4">
+            <div class="flex flex-col justify-center gap-4">
             <button 
               @click="insertTextIntoActiveInput('&#8734;')" 
               class="w-16 h-16 bg-primary rounded-xl text-white font-black text-4xl flex items-center justify-center" 

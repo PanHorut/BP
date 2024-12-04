@@ -2,15 +2,11 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Example
-from .models import Skill
-from .models import ExampleSkill
-from .models import Task
-from .models import Answer
-from .serializers import ExampleSerializer
-from .serializers import SkillSerializer
-from .serializers import ExampleSkillSerializer
-from .serializers import TaskSerializer
+from django.shortcuts import get_object_or_404
+from django.db import transaction
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample
+from .serializers import ExampleSerializer, ExampleSkillSerializer, SkillSerializer, TaskSerializer, RecordInitSerializer
+
 
 
 class ExampleList(generics.ListCreateAPIView):
@@ -25,11 +21,7 @@ class ExampleSkillList(generics.ListCreateAPIView):
     queryset = ExampleSkill.objects.all()
     serializer_class = ExampleSkillSerializer
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from .models import Task, Example, Answer, Skill, ExampleSkill
-from .serializers import ExampleSerializer, AnswerSerializer
+
 
 @api_view(['POST'])
 def addExample(request):
@@ -143,3 +135,61 @@ def get_examples(request):
     ]
 
     return Response(example_data, status=status.HTTP_200_OK)
+
+
+# vytvori zaznam, ze zak dany priklad pocital, datum se nastavi automaticky
+@api_view(['POST'])
+def create_example_record(request):
+    student = request.data.get('student_id')
+    example = request.data.get('example_id')
+    
+    if not student:
+        return Response({"error": "Student ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+    if not example:
+        return Response({"error": "Example ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    init_data = {
+        'student': student,
+        'example': example
+    }
+
+    record_init_serializer = RecordInitSerializer(data=init_data)
+
+    if record_init_serializer.is_valid():
+        record = record_init_serializer.save()
+
+        response_data = record_init_serializer.data
+        response_data['date'] = record.date  # Include the 'date' from the saved record
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+    return Response(record_init_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# pokud dite u prikladu odpovi, na zaklade spravnosti se urci co dal (dalsi pokus x spravna odpoved x dalsi priklad)
+@api_view(['POST'])
+def update_example_record(request):
+
+    is_correct = request.data.get('isCorrect')
+    student = request.data.get('student_id')
+    example = request.data.get('example_id')
+    date = request.data.get('date')
+    duration = request.data.get('time')
+  
+
+    if not student or not example or not duration:
+        return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    student_example = get_object_or_404(StudentExample, student_id=student, example_id=example, date=date)
+    
+    try:
+        with transaction.atomic():
+            if is_correct:
+                student_example.duration = duration
+            else:
+                student_example.attempts += 1
+            student_example.save()
+        
+        return Response({"message": "Record updated successfully"}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        

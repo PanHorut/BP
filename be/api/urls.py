@@ -11,5 +11,8 @@ urlpatterns = [
 
     path('skill/<int:skill_id>/', views.get_skill, name='get-skill'),
     path('examples/', views.get_examples, name='get-examples'),
+    path('create-record/', views.create_example_record, name='create-example-record'),
+    path('update-record/', views.update_example_record, name='update-example-record'),
+
 
 ]

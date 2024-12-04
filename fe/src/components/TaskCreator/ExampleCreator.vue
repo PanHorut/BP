@@ -5,7 +5,8 @@ import { ref, onMounted, computed, watch, nextTick } from 'vue';
 const props = defineProps({
   number: {
     type: Number,
-  }
+  },
+  
 });
 
 const exampleInput = ref('');
@@ -88,8 +89,15 @@ const getData = () => {
   }
 };
 
+const importExample = (example, answer, steps) => {
+  exampleInput.value = example;
+  answerInput.value = answer;
+  stepInputs.value = steps;
+}
+
+
 // Expose the getData method to parent components
-defineExpose({ getData });
+defineExpose({ getData, importExample });
 
 onMounted(() => {
   renderMathJax();

@@ -1,6 +1,5 @@
 from django.db import models
-
-# Create your models here.
+from datetime import timedelta
 
 class Task(models.Model):
     name = models.CharField(max_length=255)
@@ -32,5 +31,15 @@ class Student(models.Model):
     username = models.CharField(max_length=255)
     passphrase = models.CharField(max_length=255)
 
+class StudentExample(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    example = models.ForeignKey(Example, on_delete=models.CASCADE)
+    date = models.DateTimeField(auto_now_add=True)
+    duration = models.IntegerField(default=0)
+    attempts = models.IntegerField(default=1) 
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['student', 'example', 'date'], name='unique_student_example_date')
+        ]
 

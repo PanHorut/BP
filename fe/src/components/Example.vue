@@ -4,6 +4,8 @@ import InlineInput from '@/components/Input Fields/InlineInput.vue';
 import FractionInput from './Input Fields/FractionInput.vue';
 import VariableInput from './Input Fields/VariableInput.vue';
 import SetInput from './Input Fields/SetInput.vue';
+import Timer from '@/components/Example/Timer.vue';
+import { updateRecord, createRecord } from '@/api/apiClient';
 
 
 
@@ -22,16 +24,23 @@ const inlineInput = ref(null);
 const fractionInput = ref(null);
 const setInput = ref(null);
 const variableInput = ref(null);
+const timer = ref(null);
+const student_id = 1;
+const record_date = ref('');
 
-const checkInline = (answer) => {
+const checkInline = async (answer) => {
 
   if(props.answer == answer){
+    
+    const result = await updateRecord(student_id, props.example.id, true, timer.value.getTime(), record_date.value);
     emits('answerSent', true);
-    console.log("CORRECT");
+
+    
 
   }else{
+    const result = await updateRecord(student_id, props.example.id, false, timer.value.getTime(), record_date.value);
     emits('answerSent', false);
-    console.log("FALSE");
+    
   }
   
   
@@ -84,6 +93,12 @@ const checkSet = (variables) => {
   console.log("CORRECT"); 
 }
 
+const initRecord = async () => {
+  const result = await createRecord(student_id, props.example.id);
+  record_date.value = result.date;
+  
+}
+
 watch(
   () => props.example,
   () => {
@@ -99,10 +114,7 @@ const handleNumDown = (event) => {
 function renderMathJax() {
   if (window.MathJax) {
     window.MathJax.typesetPromise()
-      .then(() => console.log("MathJax rendered in Example component"))
-      .catch((err) => console.error("MathJax rendering error:", err));
-  } else {
-    console.error("MathJax not loaded.");
+      
   }
 }
 
@@ -146,9 +158,11 @@ function extractFraction(fraction) {
 
 // Set up event listeners on mount
 onMounted(() => {
+  initRecord()
   window.addEventListener('keydown', handleNumDown);
   window.addEventListener('keydown', handleEnter);
   renderMathJax();
+  timer.value.startTimer();
 });
 
 // Clean up event listeners on unmount
@@ -159,10 +173,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center">
+  <div class="w-full flex flex-col items-center justify-center">
+    <Timer ref="timer" class="absolute right-3 top-24"></Timer>
   <div class="flex items-center justify-center mt-40">
+    
     <div class="flex flex-col">
+      
       <div class="text-8xl">
+        
         <div class="flex w-32 items-center">
           {{ renderedExample }}
         </div>

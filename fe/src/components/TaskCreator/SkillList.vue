@@ -1,5 +1,5 @@
 <script setup>
-import { ref, defineEmits } from 'vue';
+import { ref, defineEmits, defineExpose } from 'vue';
 import SkillPicker from './SkillPicker.vue';
 
 // State for storing selected items
@@ -18,8 +18,11 @@ const removeSkill = (skill) => {
   selectedSkills.value = selectedSkills.value.filter((s) => s !== skill);
 };
 
+const importSkills = (skills) => {
+  selectedSkills.value = skills;
+}
 
-
+defineExpose({ importSkills });
 
 </script>
 

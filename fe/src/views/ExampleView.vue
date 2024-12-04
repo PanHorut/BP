@@ -2,7 +2,6 @@
 import Example from '@/components/Example.vue';
 import ProgressBar from '@/components/Example/ProgressBar.vue';
 import SpecialCharsBar from '@/components/Example/SpecialCharsBar.vue';
-import Timer from '@/components/Example/Timer.vue';
 import { ref, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
@@ -18,7 +17,6 @@ const topics = ref([]);
 const isCorrect = ref(false);
 const showIcon = ref(false);
 
-const timer = ref(null);
 
 const displayNext = async (isCorrect) => {
 
@@ -27,8 +25,6 @@ const displayNext = async (isCorrect) => {
     if (isCorrect) {
       displayIcon(true);
       
-      console.log(timer.value.getTime());
-      timer.value.startTimer();
       curr_index.value++;
       await nextTick(); 
     } else {
@@ -71,17 +67,14 @@ onMounted(() => {
   if (route.query.topics) {
     topics.value = JSON.parse(route.query.topics);
     fetchExamples(topics.value);
-    timer.value.startTimer();
   }
 });
 </script>
 
 <template>
     <SpecialCharsBar></SpecialCharsBar>
-    <div class="flex justify-between">
-      <div></div>
+    <div class="flex justify-center">
       <ProgressBar :totalExamples="examples.length" :finishedExamples="curr_index"></ProgressBar>
-      <Timer ref="timer"></Timer>
     </div>
     <div class="flex items-center justify-center">
       <Example v-if="examples.length > curr_index" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" :key="curr_index"></Example>
