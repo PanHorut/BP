@@ -1,12 +1,33 @@
-# Railway.toml for the backend
-[build]
-  builder = "heroku/python"  # For the backend (assuming Django)
-  path = "be"  # Backend directory
+# Railway Configuration file
 
-# For frontend (if deploying separately or in a multi-service setup)
-[[services]]
-  name = "frontend"
-  build = "fe"
-  env = "production"
-  command = "npm run build"  # Build frontend assets
-  port = 80
+[build]
+  # Specify the backend and frontend buildpacks
+  builder = "nixpacks"
+
+  # The build should include both frontend and backend
+  commands = [
+    "cd fe && npm install && npm run build",  # Build React app
+    "cd be && pip install -r requirements.txt" # Install backend requirements
+  ]
+
+# Set the environment variables (Make sure to set these in the Railway dashboard as well)
+[env]
+  DJANGO_SECRET_KEY = "your-django-secret-key"
+  MYSQL_DATABASE = "your-database-name"
+  MYSQL_USER = "your-database-user"
+  MYSQL_PASSWORD = "your-database-password"
+  MYSQL_HOST = "your-database-host"
+  MYSQL_PORT = "3306" # or whatever port your DB uses
+
+# Optionally, define a custom port (depending on your deployment strategy)
+[deploy]
+  # Optional: use a custom port if Railway requires it
+  port = 8000
+
+[buildpacks]
+  # The buildpacks you want to use
+  [[buildpacks]]
+  url = "heroku/python"  # Use the Python buildpack for Django
+  
+  [[buildpacks]]
+  url = "heroku/nodejs"  # Use the Node.js buildpack for React frontend
