@@ -1,8 +1,6 @@
 [build]
-  # Build the Django backend
-  context = "./be"
-  builder = "python"  # Tell Railway that this is a Python app
+  context = "./be/be"          # Tell Railway to look inside the actual Django project folder.
+  builder = "python"           # We are building a Python app.
 
 [deploy]
-  # Install requirements and run Django server with Gunicorn
-  start = "pip install -r requirements.txt && gunicorn projectname.wsgi --chdir be --log-file -"
+  start = "pip install -r requirements.txt && gunicorn be.wsgi --chdir be --log-file -"  # Use the correct project name
