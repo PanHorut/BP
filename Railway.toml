@@ -1,6 +1,12 @@
+# Railway.toml for the backend
 [build]
-  context = "./be/be"          # Tell Railway to look inside the actual Django project folder.
-  builder = "python"           # We are building a Python app.
+  builder = "heroku/python"  # For the backend (assuming Django)
+  path = "be"  # Backend directory
 
-[deploy]
-  start = "pip install -r requirements.txt && gunicorn be.wsgi --chdir be --log-file -"  # Use the correct project name
+# For frontend (if deploying separately or in a multi-service setup)
+[[services]]
+  name = "frontend"
+  build = "fe"
+  env = "production"
+  command = "npm run build"  # Build frontend assets
+  port = 80
