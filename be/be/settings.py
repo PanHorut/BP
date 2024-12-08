@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,7 +26,7 @@ SECRET_KEY = 'django-insecure-3zibbwj&l%j)_dh%+*tr*xvx^uun)z3=bcq35ps#d7p%ktvzgz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -77,17 +78,29 @@ WSGI_APPLICATION = 'be.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# LOCALHOST DEV
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': 'bp_db',         # Name of your MySQL database
+#        'USER': 'root',         # MySQL username
+#        'PASSWORD': 'D1n0saur.us48', # MySQL password
+#        'HOST': 'localhost',            # Database host, typically 'localhost'
+#        'PORT': '3306',                 # MySQL port (default is 3306)
+#    }
+#}
+
+# DEPLOYMENT
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'bp_db',         # Name of your MySQL database
-        'USER': 'root',         # MySQL username
-        'PASSWORD': 'D1n0saur.us48', # MySQL password
-        'HOST': 'localhost',            # Database host, typically 'localhost'
-        'PORT': '3306',                 # MySQL port (default is 3306)
+        'NAME': os.getenv('MYSQL_DATABASE'),
+        'USER': os.getenv('MYSQL_USER'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+        'HOST': os.getenv('MYSQL_HOST'),
+        'PORT': os.getenv('MYSQL_PORT'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

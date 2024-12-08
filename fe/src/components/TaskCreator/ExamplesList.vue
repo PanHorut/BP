@@ -1,6 +1,7 @@
 <script setup>
 import { ref, defineProps, defineEmits } from 'vue';
 import ExampleCreator from './ExampleCreator.vue';
+import { postExamples } from '@/api/apiClient';
 import axios from 'axios';
 
 const props = defineProps({
@@ -9,11 +10,11 @@ const props = defineProps({
     default: () => []
   },
 
-  inputType:{
+  inputType: {
     type: String
   },
 
-  taskName:{
+  taskName: {
     type: String,
     default: "Cvičení"
   }
@@ -21,9 +22,9 @@ const props = defineProps({
 
 const emit = defineEmits(['importTask']);
 
-const exampleCount = ref(10);
+const exampleCount = ref(10);  // Number of ExampleCreator components
 const examples = ref([]);
-const exampleCreators = ref([]); 
+const exampleCreators = ref([]);
 
 const isExportOpen = ref(false);
 const isImportOpen = ref(false);
@@ -46,34 +47,12 @@ const collectExamples = () => {
       if (data !== null) examples.value.push(data);
     }
   });
-  
+
   submitExamples();
 };
 
 const submitExamples = async () => {
-
-
-  try {
-    for (const example of examples.value) {
-      const response = await axios.post('http://localhost:8000/api/add-example/', {
-        example: example.example, 
-        answer: example.answer,
-        input_type: example.input_type,         
-        skill_ids: props.selectedSkills.map(skill => skill.id), 
-        task_name: props.taskName
-      });
-      
-      console.log('Example added:', response.data);
-    }
-    
-    console.log('All examples added successfully!');
-  } catch (error) {
-    if (error.response) {
-      console.error('Error adding example:', error.response.data);
-    } else {
-      console.error('Network or server error:', error.message);
-    }
-  }
+  await postExamples(examples, props.selectedSkills, props.taskName);
 };
 
 const exportJSON = () => {
@@ -84,61 +63,53 @@ const exportJSON = () => {
     }
   });
 
-  task.value = {'task_name': props.taskName, 'skill_ids': props.selectedSkills, 'examples': examples};
-
+  task.value = { 'task_name': props.taskName, 'skill_ids': props.selectedSkills, 'examples': examples };
   taskJSON.value = JSON.stringify(task.value, null, 2);
   console.log(taskJSON.value)
 
   isExportOpen.value = true;
-  
-}
+};
 
 const importJSON = () => {
-
   isImportOpen.value = false;
- 
-  const len = ref();
-  
-  if(length > 10){
-    len.value = task.value.examples.length
-    if(len % 2 === 0){
-      exampleCount.value = len;
-    }else{
-      exampleCount.value = len + 1;
+
+  if (task.value && task.value.examples) {
+    const importedExamples = task.value.examples;
+    const importedCount = importedExamples.length;
+
+    // Adjust exampleCount based on the imported examples
+    if (importedCount > exampleCount.value) {
+      exampleCount.value = importedCount;
     }
+
+    // Import examples into ExampleCreator components
+    let index = 0;
+    exampleCreators.value.forEach((creator) => {
+      const example = importedExamples[index];
+      if (creator && example) {
+        creator.importExample(example.example, example.answer, example.steps);
+        index++;
+      }
+    });
+
+    // Import task name and skills
+    emit('importTask', task.value.task_name, task.value.skill_ids);
   }
-  
-  // import examples
-  const index = ref(0);
-  exampleCreators.value.forEach((creator) => {
-    const example = task.value.examples[index.value];
-    
-    if (creator && example) {
-      creator.importExample(example.example, example.answer, example.steps)
-      index.value++;
-    }
-  });
-
-  // import task name and skills
-  emit('importTask', task.value.task_name, task.value.skill_ids)
-}
-
+};
 
 const closeExportWindow = () => {
   examples.value = [];
   isExportOpen.value = false;
-}
+};
 
 const toggleImportWindow = () => {
   isImportOpen.value = !isImportOpen.value;
-}
+};
 
 const copyToClipboard = () => {
   if (taskJSON.value) {
     navigator.clipboard.writeText(taskJSON.value).then(
-      () => {
-        
-      },
+      () => { },
       (err) => {
         console.error('Failed to copy JSON: ', err);
       }
@@ -168,18 +139,17 @@ const handleJSON = (event) => {
 
     reader.onload = (e) => {
       try {
-        const jsonData = JSON.parse(e.target.result); 
-        task.value = jsonData; 
-        validJSON.value = true; 
+        const jsonData = JSON.parse(e.target.result);
+        task.value = jsonData;
+        validJSON.value = true;
       } catch (err) {
-        
-        validJSON.value = false; 
+        validJSON.value = false;
       }
     };
 
-    reader.readAsText(file); 
+    reader.readAsText(file);
   } else {
-    validJSON.value = false; 
+    validJSON.value = false;
   }
 };
 </script>
@@ -195,7 +165,7 @@ const handleJSON = (event) => {
         v-for="index in exampleCount"
         :key="index"
         :number="index"
-        ref="exampleCreators" 
+        ref="exampleCreators"
       />
     </div>
 
@@ -212,14 +182,14 @@ const handleJSON = (event) => {
   </div>
 
   <!-- TASK EXPORTER -->
-  <div v-if="isExportOpen" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+  <div v-if="isExportOpen" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50 ">
     <div class="bg-white rounded-lg shadow-lg w-6/12 p-5 flex flex-col items-center">
         <div class=" flex justify-end items-center w-full">
 
           <div @click="copyToClipboard" class="p-2 rounded-md bg-secondary text-white font-semibold text-xl cursor-pointer mr-4">Copy</div>
           <div @click="closeExportWindow" class="p-2 rounded-md bg-slate-300 font-semibold text-xl cursor-pointer">Close</div>
         </div>
-        <div>
+        <div class="overflow-y-auto max-h-[70vh]">
           <pre>{{ taskJSON }}</pre>
         </div>
         <div class="w-full flex justify-center mt-4">
@@ -230,25 +200,21 @@ const handleJSON = (event) => {
 
   <!-- TASK IMPORTER -->
   <div v-if="isImportOpen" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
-  <div class="bg-white rounded-lg shadow-lg w-4/12 p-5 flex flex-col items-center">
-    <div class="flex justify-end items-center w-full">
-      <p @click="toggleImportWindow" class="p-2 rounded-md bg-slate-300 font-semibold text-xl cursor-pointer">
-        Close
-      </p>
-    </div>
-    <div class="flex flex-col gap-4 items-center mt-4">
-      <input
-        type="file"
-        accept=".json"
-        @change="handleJSON"
-        class="border p-2 rounded-md cursor-pointer"
-      />
-    </div>
-    <div v-if="validJSON" @click="importJSON" class="mt-4 p-2 rounded-md bg-secondary text-white font-semibold text-xl cursor-pointer">Import examples</div>
+    <div class="bg-white rounded-lg shadow-lg w-4/12 p-5 flex flex-col items-center">
+      <div class="flex justify-end items-center w-full">
+        <p @click="toggleImportWindow" class="p-2 rounded-md bg-slate-300 font-semibold text-xl cursor-pointer">
+          Close
+        </p>
+      </div>
+      <div class="flex flex-col gap-4 items-center mt-4 max-h-96 ">
+        <input
+          type="file"
+          accept=".json"
+          @change="handleJSON"
+          class="border p-2 rounded-md cursor-pointer"
+        />
+      </div>
+      <div v-if="validJSON" @click="importJSON" class="mt-4 p-2 rounded-md bg-secondary text-white font-semibold text-xl cursor-pointer">Import examples</div>
     </div>
   </div>
-
-
 </template>
-
-

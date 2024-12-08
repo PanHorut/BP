@@ -36,4 +36,29 @@ export const updateRecord = async (studentId, exampleId, isCorrect, time, date) 
     }
 };
 
+export const postExamples = async (examples, selectedSkills, taskName) => {
+
+    try {
+      for (const example of examples.value) {
+        const response = await apiClient.post('add-example/', {
+          example: example.example, 
+          answer: example.answer,
+          input_type: example.input_type,         
+          skill_ids: selectedSkills.map(skill => skill.id), 
+          task_name: taskName
+        });
+        
+        console.log('Example added:', response.data);
+      }
+      
+      console.log('All examples added successfully!');
+    } catch (error) {
+      if (error.response) {
+        console.error('Error adding example:', error.response.data);
+      } else {
+        console.error('Network or server error:', error.message);
+      }
+    }
+  };
+
 export default apiClient;

@@ -1,0 +1,1 @@
+web: gunicorn drillovacka.wsgi --log-file -
