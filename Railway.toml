@@ -1,0 +1,8 @@
+[build]
+  # Build the Django backend
+  context = "./be"
+  builder = "python"  # Tell Railway that this is a Python app
+
+[deploy]
+  # Install requirements and run Django server with Gunicorn
+  start = "pip install -r requirements.txt && gunicorn projectname.wsgi --chdir be --log-file -"
