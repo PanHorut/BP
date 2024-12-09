@@ -1,17 +1,15 @@
 <script setup>
 import {ref, onMounted} from 'vue';
-import axios from 'axios';
 import TopicCard from '@/components/MainMenu/TopicCard.vue';
+import { getParentSkills } from '@/api/apiClient';
 
 const topics = ref([]) 
 
 onMounted(async () => {
-  try {
-    const response = await axios.get('http://localhost:8000/api/parent-skills/');
-    topics.value = response.data
-  } catch (error) {
-    console.error("Error fetching skills:", error)
-  }
+
+    
+    topics.value = getParentSkills();
+  
 })
 
 </script>

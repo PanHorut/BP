@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8000/api/',
+  baseURL: 'https://bp-production-37c0.up.railway.app/api/', // 'http://localhost:8000/api/',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -60,5 +60,16 @@ export const postExamples = async (examples, selectedSkills, taskName) => {
       }
     }
   };
+
+export const getParentSkills = async () => {
+  try {
+    const response = await axios.get('parent-skills/');
+    return response.data
+  
+  } catch (error) {
+    console.error("Error fetching skills:", error)
+  }
+
+}
 
 export default apiClient;
