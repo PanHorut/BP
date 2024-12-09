@@ -13,6 +13,9 @@ import { ref, onMounted } from 'vue';
     <RouterLink to="/sandbox" class="border-4 border-black p-4 cursor-pointer text-2xl font-black rounded-lg">
       SANDBOX
     </RouterLink>
+    
   </div>
+  <p class="flex justify-center text-green-600 font-bold text-4xl mt-5">ONLINE</p>
+
 
 </template>
