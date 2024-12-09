@@ -1,7 +1,7 @@
 <script setup>
 import { ref, defineEmits, defineProps, watch, onMounted } from 'vue'; // Make sure to import watch
-import axios from 'axios'
-// Emit setup
+import { getLeafSkills } from '@/api/apiClient';
+
 const emit = defineEmits(['update:selectedItems']);
 
 // Props
@@ -40,8 +40,7 @@ const applySelection = () => {
 
 onMounted(async () => {
   try {
-    const response = await axios.get('http://localhost:8000/api/leaf-skills/') // Adjust the URL as needed
-    items.value = response.data
+    items.value = await getLeafSkills();
   } catch (error) {
     console.error("Error fetching skills:", error)
   }

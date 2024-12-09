@@ -6,9 +6,8 @@ import { getParentSkills } from '@/api/apiClient';
 const topics = ref([]) 
 
 onMounted(async () => {
-
-    
-    topics.value = getParentSkills();
+    topics.value = await getParentSkills();
+    console.log(topics.value);
   
 })
 

@@ -4,8 +4,7 @@ import ProgressBar from '@/components/Example/ProgressBar.vue';
 import SpecialCharsBar from '@/components/Example/SpecialCharsBar.vue';
 import { ref, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
-import axios from 'axios';
-import qs from 'qs';
+import { getExamples } from '@/api/apiClient';
 import correctIcon from '@/assets/img/correct.png';
 import wrongIcon from '@/assets/img/wrong.png'
 
@@ -37,21 +36,9 @@ const displayNext = async (isCorrect) => {
 };
 
 const fetchExamples = async (selectedIds) => {
-  try {
-    const response = await axios.get('http://localhost:8000/api/examples/', {
-      params: {
-        skill_ids: selectedIds, 
-      },
-      paramsSerializer: (params) => {
-        return qs.stringify(params, { arrayFormat: 'repeat' }); 
-      },
-    });
-    examples.value = response.data; 
-    console.log("Fetched examples with answers:", examples.value); 
-    
-  } catch (error) {
-    console.error("Error fetching examples:", error);
-  }
+  
+    examples.value = await getExamples(selectedIds);
+ 
 };
 
 const displayIcon = (correct) => {

@@ -1,8 +1,7 @@
 <script setup>
 import { ref, defineProps, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
-
+import { getSkill } from '@/api/apiClient';
 import SubTopic from '@/components/SubTopic.vue';
   
 const props = defineProps({
@@ -18,13 +17,10 @@ const selectedSubtopics = ref([]);
 
 
 onMounted(async () => {
-  try {
-    const response = await axios.get(`http://localhost:8000/api/skill/${props.id}/`);
-    topic.value = response.data.skill;
-    subtopics.value = response.data.child_skills;
-  } catch (error) {
-    console.error("Error fetching skills:", error)
-  }
+    const response = await getSkill(props.id);
+    topic.value = response.skill;
+    subtopics.value = response.child_skills;
+
 })
 
 const handleToggle = ({ id, checked }) => {

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import qs from 'qs'; 
 
 const apiClient = axios.create({
   baseURL: 'https://bp-production-37c0.up.railway.app/api/', // 'http://localhost:8000/api/',
@@ -63,13 +64,52 @@ export const postExamples = async (examples, selectedSkills, taskName) => {
 
 export const getParentSkills = async () => {
   try {
-    const response = await axios.get('parent-skills/');
+    const response = await apiClient.get('parent-skills/');
     return response.data
   
   } catch (error) {
     console.error("Error fetching skills:", error)
   }
 
+}
+
+export const getSkill = async (id) => {
+  try {
+    const response = await apiClient.get(`skill/${id}/`);
+    return response.data;
+    
+  } catch (error) {
+    console.error("Error fetching skill:", error)
+  }
+}
+
+
+
+export const getExamples = async (selectedIds) => {
+  try {
+    const response = await apiClient.get('examples/', {
+      params: {
+        skill_ids: selectedIds,
+      },
+      paramsSerializer: (params) => {
+        return qs.stringify(params, { arrayFormat: 'repeat' });
+      },
+    });
+    return response.data;
+
+  } catch (error) {
+    console.error("Error fetching examples:", error);
+  }
+};
+
+export const getLeafSkills = async () => {
+  try {
+    const response = await apiClient.get('leaf-skills/'); 
+    return response.data;
+    
+  } catch (error) {
+    console.error("Error fetching skills:", error)
+  }
 }
 
 export default apiClient;
