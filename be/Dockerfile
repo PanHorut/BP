@@ -1,10 +1,13 @@
 # Use a base image that supports your app
 FROM python:3.11-slim
 
-# Install system dependencies for mysqlclient
+# Install system dependencies for mysqlclient and build tools
 RUN apt-get update && apt-get install -y \
     libmariadb-dev \
     pkg-config \
+    gcc \
+    python3-dev \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up the working directory
