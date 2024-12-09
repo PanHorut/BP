@@ -9,6 +9,7 @@ certifi==2024.8.30
 charset-normalizer==3.4.0
 click==8.1.7
 dill==0.3.8
+distlib==0.3.9
 Django==5.1.2
 django-cors-headers==4.5.0
 djangorestframework==3.15.2
@@ -30,6 +31,8 @@ networkx==3.4.2
 numpy==2.1.2
 packaging==24.2
 pandas==2.2.3
+pipenv==2024.4.0
+platformdirs==4.3.6
 propcache==0.2.1
 pyarrow==18.1.0
 pydantic==2.9.2
@@ -54,5 +57,7 @@ typing_extensions==4.12.2
 tzdata==2024.2
 urllib3==2.2.3
 uvicorn==0.32.0
+virtualenv==20.28.0
+whitenoise==6.8.2
 xxhash==3.5.0
 yarl==1.18.3
