@@ -26,7 +26,7 @@ MarkupSafe==3.0.2
 mpmath==1.3.0
 multidict==6.1.0
 multiprocess==0.70.16
-mysqlclient==2.2.4
+PyMySQL==1.0.2
 networkx==3.4.2
 numpy==2.1.2
 packaging==24.2
