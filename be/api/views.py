@@ -183,13 +183,16 @@ def update_example_record(request):
     
     try:
         with transaction.atomic():
-            if is_correct:
-                student_example.duration = duration
-            else:
-                student_example.attempts += 1
+            student_example.attempts += 1
+
+            student_example.duration = duration
+
+            next_example = student_example.attempts == 3
+            
+                                    
             student_example.save()
         
-        return Response({"message": "Record updated successfully"}, status=status.HTTP_200_OK)
+        return Response({"message": "Record updated successfully", "next_example": next_example}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         

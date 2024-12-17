@@ -36,7 +36,7 @@ class StudentExample(models.Model):
     example = models.ForeignKey(Example, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
     duration = models.IntegerField(default=0)
-    attempts = models.IntegerField(default=1) 
+    attempts = models.IntegerField(default=0) 
 
     class Meta:
         constraints = [

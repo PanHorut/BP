@@ -107,6 +107,7 @@ onMounted(() => {
 const addStepInput = () => {
   stepInputs.value.push({ value: '' });
 };
+
 </script>
 
 <template>
@@ -154,24 +155,23 @@ const addStepInput = () => {
       </div>
 
       <!-- Example and Answer Previews -->
-      <div>
+      <div class="flex flex-col">
         <h2 class="text-secondary font-bold">Náhled:</h2>
         <!-- Rendered Example -->
         <div
-          class="border border-gray-300 p-2 h-20 w-48 mb-1 text-md max-w-48"
-          v-html="renderedExample"
+        class="border border-gray-300 p-2 h-20 w-48 mb-1 text-md max-w-48 mjx-container"
+        v-html="renderedExample"
         ></div>
-        
         <!-- Rendered Answer -->
         <div
-          class="border border-gray-300 p-2 h-12 w-48 mb-1 text-md"
+          class="border border-gray-300 p-2 h-12 w-48 mb-1 text-md max-w-48 mjx-container"
           v-html="renderedAnswer"
         ></div>
 
         <!-- Dynamically Rendered Step Previews, only if steps exist -->
         <div v-if="renderedSteps.length > 0">
           <div v-for="(step, index) in renderedSteps" :key="index"
-            class="border border-gray-300 p-2 h-12 w-48 mb-1 text-md"
+            class="border border-gray-300 p-2 h-12 w-48 mb-1 text-md mjx-container"
             v-html="step"
           ></div>
         </div>
@@ -190,3 +190,12 @@ const addStepInput = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.mjx-container {
+  display: inline-grid;
+  overflow-wrap: break-word;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+</style>

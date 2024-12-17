@@ -33,25 +33,25 @@ const checkInline = async (answer) => {
   if(props.answer == answer){
     
     const result = await updateRecord(student_id, props.example.id, true, timer.value.getTime(), record_date.value);
-    emits('answerSent', true);
+    emits('answerSent', {isCorrect: true, nextExample: true});
 
     
 
   }else{
     const result = await updateRecord(student_id, props.example.id, false, timer.value.getTime(), record_date.value);
-    emits('answerSent', false);
+    emits('answerSent', {isCorrect: false, nextExample: result.next_example});
     
   }
   
   
 };
 
-const checkFraction = (numerator, denominator) => {
+const checkFraction = async (numerator, denominator) => {
   const answer = extractFraction(props.answer);
 
   if(numerator == answer.numerator && denominator == answer.denominator){
-    emits('answerSent', true);
-    console.log("CORRECT");
+    const result = await updateRecord(student_id, props.example.id, true, timer.value.getTime(), record_date.value);
+    emits('answerSent', {isCorrect: true, nextExample: true});
 
   }else{
     emits('answerSent', false);

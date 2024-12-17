@@ -1,5 +1,5 @@
 <script setup>
-import { defineProps, ref, watch, defineEmits, computed } from 'vue';
+import { defineProps, ref, watch, defineEmits, computed, onMounted } from 'vue';
 
 const props = defineProps({
     answer: {
@@ -10,6 +10,7 @@ const props = defineProps({
 
 
 const variables = ref([]);
+const variableInputs = ref([]);
 
 const emits = defineEmits(['answerSent']); 
 
@@ -37,10 +38,11 @@ function getVariables() {
       }
     }
   });
+
 }
 
-watch(() => props.answer, getVariables, { immediate: true });
 
+watch(() => props.answer, getVariables, { immediate: true });
 
 </script>
 
@@ -54,7 +56,6 @@ watch(() => props.answer, getVariables, { immediate: true });
                 @input="updateAnswers" 
                 class="text-start w-64 text-8xl border-none self-end p-0"
                 placeholder="?"
-                autofocus
             />
         </div>
     </div>
