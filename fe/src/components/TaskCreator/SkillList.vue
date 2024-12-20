@@ -16,6 +16,7 @@ const updateSkills = (skills) => {
 const removeSkill = (skill) => {
   // Remove from the selectedSkills array
   selectedSkills.value = selectedSkills.value.filter((s) => s !== skill);
+  emits('update-skills', selectedSkills.value); 
 };
 
 const importSkills = (skills) => {
@@ -27,9 +28,9 @@ defineExpose({ importSkills });
 </script>
 
 <template>
-  <div class="flex items-start justify-start w-full">
+  <div class="flex items-center justify-start w-full">
     
-    <h1 class="text-primary font-bold text-2xl mr-1 max-w-32">Procvičené schopnosti</h1>
+    <h1 class="text-primary font-bold text-2xl mr-4 max-w-32 ">Schopnosti</h1>
 
     <!-- Listen for update:selectedItems event -->
     <SkillPicker 
@@ -38,23 +39,22 @@ defineExpose({ importSkills });
     />
 
     <!-- Display selected items in a list -->
-     <div class="ml-2 min-w-80 min-h-20 border border-tertiary ">
-    <ul class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 ">
-      <li 
-        v-for="(skill, index) in selectedSkills" 
-        :key="index" 
-        class="flex items-center justify-start bg-tertiary p-1 m-2 rounded-xl max-h-8"
-      >
-        <button 
-          @click="removeSkill(skill)" 
-          class="w-6 h-6 text-primary text-center font-bold rounded-md"
-        >
-          x
-        </button>
-        <span class="text-gray-600 font-bold px-1 whitespace-nowrap">{{ skill.name }}</span>
-        
-      </li>
-    </ul>
+     <div class="ml-2 min-w-80 max-w-4xl min-h-20 border border-tertiary ">
+        <ul class="flex flex-wrap">
+          <li 
+            v-for="(skill, index) in selectedSkills" 
+            :key="index" 
+            class="flex items-center justify-start bg-tertiary p-1 m-2 rounded-xl"
+          >
+          <button 
+            @click="removeSkill(skill)" 
+            class="w-6 h-6 text-primary text-center font-bold rounded-md"
+          >
+            &times;
+          </button>
+          <span class="text-gray-600 font-bold px-1 whitespace-nowrap">{{ skill.name }}</span>
+        </li>
+      </ul>
     </div>
   </div>
 </template>

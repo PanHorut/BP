@@ -2,7 +2,7 @@ import axios from 'axios';
 import qs from 'qs'; 
 
 const apiClient = axios.create({
-  baseURL: 'https://bp-production-37c0.up.railway.app/api/',//'http://localhost:8000/api/',
+  baseURL:  'https://bp-production-37c0.up.railway.app/api/', //'http://localhost:8000/api/'
   headers: {
     'Content-Type': 'application/json',
   },

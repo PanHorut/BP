@@ -64,16 +64,25 @@ onMounted(async () => {
   
         
         <div class="mt-4 w-full">
-            <ul class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <li v-for="(item, index) in items" :key="index" class="flex items-center mb-2">
-              <input
-                type="checkbox"
-                :id="`item-${index}`"
-                v-model="selectedItems"
-                :value="item"
-                class="w-6 h-6 rounded-lg border-primary text-primary"
-              />
-              <label :for="`item-${index}`" class="ml-2 text-secondary text-lg whitespace-nowrap">{{ item.name }}</label>
+          <ul class="flex flex-wrap gap-4">
+            <li 
+              v-for="(item, index) in items" 
+              :key="index" 
+              class="flex items-center justify-start mb-2"
+            >
+            <input
+              type="checkbox"
+              :id="`item-${index}`"
+              v-model="selectedItems"
+              :value="item"
+              class="w-6 h-6 rounded-lg border-primary text-primary"
+            />
+            <label 
+            :for="`item-${index}`" 
+            class="ml-2 text-secondary text-lg flex-1 min-w-[120px] overflow-hidden text-ellipsis"
+            >
+              {{ item.name }}
+            </label>
             </li>
           </ul>
         </div>

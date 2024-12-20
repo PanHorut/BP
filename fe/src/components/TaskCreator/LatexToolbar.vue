@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 const frac = computed(() => `\\(\\frac{a}{b}\\)`);
 const pwr2 = computed(() => `\\(a^2\\)`);
@@ -26,7 +26,11 @@ onMounted(() => {
   renderMathJax();
 });
 
+const isHidden = ref(false);
 
+const toggleToolbar = () => {
+  isHidden.value = !isHidden.value;
+}
 
 function insertTextIntoActiveInput(text) {
   const activeElement = document.activeElement;
@@ -45,11 +49,13 @@ function insertTextIntoActiveInput(text) {
 </script>
 
 <template>
-    <div @mousedown.prevent class="fixed left-0 h-full border-r-4 border-t-4 border-primary w-56">
+    <div @mousedown.prevent :class="['fixed left-0 h-full border-r-4 border-t-4 border-primary w-56 transition-transform duration-300', 
+              { '-translate-x-48': isHidden, 'translate-x-0': !isHidden }]">
         <div class="flex flex-col items-center">
             <div class="text-center text-primary text-3xl font-black my-4">LaTeX zápis</div>
             <!-- Render frac using v-html for MathJax processing and center content -->
             <div class="grid grid-cols-2 justify-center gap-4">
+
             <button 
               @click="insertTextIntoActiveInput('\\frac{a}{b}')" 
               class="w-16 h-16 bg-primary rounded-xl text-white font-black text-3xl flex items-center justify-center" 
@@ -134,6 +140,13 @@ function insertTextIntoActiveInput(text) {
             </button>
         </div>
         </div>
+        <div 
+          @click="toggleToolbar" 
+          class="fixed top-1/2 left-56 -translate-y-1/2 ml-2 bg-primary text-white text-2xl  cursor-pointer font-bold w-12 h-12 rounded-full flex items-center justify-center"
+        >
+          {{ isHidden ? '>' : '<' }}
+        </div>
+
     </div>
 </template>
 

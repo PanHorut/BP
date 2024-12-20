@@ -1,8 +1,7 @@
 <script setup>
-import { ref, defineProps, defineEmits } from 'vue';
+import { ref, defineProps, defineEmits, nextTick } from 'vue';
 import ExampleCreator from './ExampleCreator.vue';
 import { postExamples } from '@/api/apiClient';
-import axios from 'axios';
 
 const props = defineProps({
   selectedSkills: {
@@ -22,7 +21,7 @@ const props = defineProps({
 
 const emit = defineEmits(['importTask']);
 
-const exampleCount = ref(10);  // Number of ExampleCreator components
+const exampleCount = ref(10);  
 const examples = ref([]);
 const exampleCreators = ref([]);
 
@@ -83,13 +82,15 @@ const importJSON = () => {
     }
 
     // Import examples into ExampleCreator components
-    let index = 0;
-    exampleCreators.value.forEach((creator) => {
-      const example = importedExamples[index];
-      if (creator && example) {
-        creator.importExample(example.example, example.answer, example.steps);
-        index++;
-      }
+    nextTick(() => {
+      let index = 0;
+      exampleCreators.value.forEach((creator) => {
+        const example = importedExamples[index];
+        if (creator && example) {
+          creator.importExample(example.example, example.answer, example.steps);
+          index++;
+        }
+      });
     });
 
     // Import task name and skills

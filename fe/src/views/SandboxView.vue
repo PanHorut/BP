@@ -29,7 +29,7 @@ const applyImport = (name, skills) => {
         <LatexToolbar></LatexToolbar>
         <div class="flex justify-center flex-col items-center">
         <div class="flex w-full items-center my-2">
-            <h2 class="text-2xl font-bold text-primary mr-2">Název cvičení:</h2>
+            <h2 class="text-2xl font-bold text-primary mr-8">Název cvičení:</h2>
             <input v-model="taskName" type="text" class="p-1 text-2xl border border-tertiary">
         </div>    
         <SkillList ref="skillList" @update-skills="updateSelectedSkills"></SkillList>

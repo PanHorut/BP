@@ -21,7 +21,7 @@ const selectedInputType = ref(props.modelValue);
 <template>
     <div class="w-full flex justify-start items-center">
       <label class=" text-primary text-xl font-bold my-8 mr-2" for="inputTypeSelect">
-        Vyberte typ cvičení
+        Typ cvičení
       </label>
       <select
         id="inputTypeSelect"
