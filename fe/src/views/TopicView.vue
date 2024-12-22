@@ -26,9 +26,14 @@ onMounted(async () => {
 
 const handleToggle = ({ id, checked }) => {
   if (checked) {
+    
     selectedSubtopics.value.push(id); 
   } else {
-    selectedSubtopics.value.splice(id, 1); 
+
+    const index = selectedSubtopics.value.findIndex(subtopicId => subtopicId === id);
+    if (index !== -1) {
+      selectedSubtopics.value.splice(index, 1); 
+    }
   }
 };
 
@@ -38,12 +43,10 @@ function startPracticing() {
   if(selectedSubtopics.value.length > 0){
     router.push({ name: 'examples', query: { topics: JSON.stringify(selectedSubtopics.value) } });
   }else {
-    // Show error message with fade-in effect
     noTopics.value = true;
 
-    // Automatically hide the message after 2 seconds
     setTimeout(() => {
-      noTopics.value = false; // Fade out after 2 seconds
+      noTopics.value = false; 
     }, 2000);
   }
 }
