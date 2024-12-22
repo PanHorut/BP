@@ -50,10 +50,10 @@ const fetchExamples = async (selectedIds) => {
 };
 
 const displayIcon = (correct) => {
-  showIcon.value = false;
+  console.log(correct);
+  isCorrect.value = correct; 
 
   nextTick(() => {
-    isCorrect.value = correct; 
     showIcon.value = true; 
 
     setTimeout(() => {
