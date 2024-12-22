@@ -34,12 +34,11 @@ const checkInline = async (answer) => {
     
     const result = await updateRecord(student_id, props.example.id, true, timer.value.getTime(), record_date.value);
     emits('answerSent', {isCorrect: true, nextExample: true});
-
-    
-
   }else{
+    // false answer
     const result = await updateRecord(student_id, props.example.id, false, timer.value.getTime(), record_date.value);
     emits('answerSent', {isCorrect: false, nextExample: result.next_example});
+    clearInput();
     
   }
   
@@ -54,13 +53,16 @@ const checkFraction = async (numerator, denominator) => {
     emits('answerSent', {isCorrect: true, nextExample: true});
 
   }else{
-    emits('answerSent', false);
-    console.log("FALSE");
+    // false answer
+    const result = await updateRecord(student_id, props.example.id, false, timer.value.getTime(), record_date.value);
+    emits('answerSent', {isCorrect: false, nextExample: result.next_example});
+    clearInput();
+
   }
  
 }
 
-const checkVariables = (variables) => {
+const checkVariables = async (variables) => {
   
   for (const variable of variables) {
 
@@ -68,29 +70,35 @@ const checkVariables = (variables) => {
       continue;
 
     }else{
-      emits('answerSent', false);
-      console.log("FALSE");
+      // false answer
+      const result = await updateRecord(student_id, props.example.id, false, timer.value.getTime(), record_date.value);
+      emits('answerSent', {isCorrect: false, nextExample: result.next_example});
+      clearInput();
+
       return;
     }
   }
-  emits('answerSent', true);
-  console.log("CORRECT"); 
+  const result = await updateRecord(student_id, props.example.id, true, timer.value.getTime(), record_date.value);
+  emits('answerSent', {isCorrect: true, nextExample: true});
 }
 
-const checkSet = (variables) => {
+const checkSet = async (variables) => {
   for (const variable of variables) {
 
     if(variable.answer == variable.correctAnswer){
       continue;
 
     }else{
-      emits('answerSent', false);
-      console.log("FALSE");
+      // false answer
+      const result = await updateRecord(student_id, props.example.id, false, timer.value.getTime(), record_date.value);
+      emits('answerSent', {isCorrect: false, nextExample: result.next_example});
+      clearInput();
+
       return;
     }
   }
-  emits('answerSent', true);
-  console.log("CORRECT"); 
+  const result = await updateRecord(student_id, props.example.id, true, timer.value.getTime(), record_date.value);
+  emits('answerSent', {isCorrect: true, nextExample: true});
 }
 
 const initRecord = async () => {
@@ -138,8 +146,22 @@ const getAnswer = () =>{
     }else if(fractionInput.value != null){
       fractionInput.value.getAnswer();
     }
-    
-  
+}
+
+const clearInput = () => {
+
+  if(inlineInput.value != null){
+    inlineInput.value.clearInput();
+
+  } else if(variableInput.value != null){
+    variableInput.value.clearInput();
+
+  }else if(setInput.value != null){
+    setInput.value.clearInput();
+
+  }else if(fractionInput.value != null){
+    fractionInput.value.clearInput();
+  }
 }
 
 function extractFraction(fraction) {

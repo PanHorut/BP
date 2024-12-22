@@ -50,12 +50,16 @@ const fetchExamples = async (selectedIds) => {
 };
 
 const displayIcon = (correct) => {
-  isCorrect.value = correct;
-  showIcon.value = true;
+  showIcon.value = false;
 
-  setTimeout(() => {
-    showIcon.value = false;
-  }, 400);
+  nextTick(() => {
+    isCorrect.value = correct; 
+    showIcon.value = true; 
+
+    setTimeout(() => {
+      showIcon.value = false;
+    }, 400);
+  });
 };
 
 onMounted(() => {

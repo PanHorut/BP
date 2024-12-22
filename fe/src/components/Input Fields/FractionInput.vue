@@ -34,7 +34,12 @@ function handleKeydown(event) {
     }
 }
 
-defineExpose({getAnswer});
+const clearInput = () => {
+    numerator.value = '';
+    denominator.value = '';
+}
+
+defineExpose({getAnswer, clearInput});
 </script>
 
 <template>

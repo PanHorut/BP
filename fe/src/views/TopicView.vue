@@ -14,6 +14,7 @@ const props = defineProps({
 const topic = ref(null);
 const subtopics = ref([]);
 const selectedSubtopics = ref([]);
+const noTopics = ref(false);
 
 
 onMounted(async () => {
@@ -34,7 +35,17 @@ const handleToggle = ({ id, checked }) => {
 const router = useRouter()
 
 function startPracticing() {
+  if(selectedSubtopics.value.length > 0){
     router.push({ name: 'examples', query: { topics: JSON.stringify(selectedSubtopics.value) } });
+  }else {
+    // Show error message with fade-in effect
+    noTopics.value = true;
+
+    // Automatically hide the message after 2 seconds
+    setTimeout(() => {
+      noTopics.value = false; // Fade out after 2 seconds
+    }, 2000);
+  }
 }
 
 
@@ -56,6 +67,24 @@ function startPracticing() {
       <div @click="startPracticing" 
         class="cursor-pointer bg-tertiary px-6 py-3 rounded-2xl font-bold text-primary text-2xl">
         Začít procvičovat
-    </div>
+      </div>
+
+      <transition name="fade">
+        <div 
+          v-if="noTopics" 
+          class="text-red-600 font-semibold text-xl mt-6">
+            Nebylo vybráno žádné cvičení
+        </div>
+      </transition>   
+
     </div>
 </template>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+}
+</style>

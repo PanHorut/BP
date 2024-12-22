@@ -1,5 +1,5 @@
 <script setup>
-import {defineEmits,defineExpose, ref, onMounted} from 'vue';
+import {defineEmits, defineExpose, ref, onMounted} from 'vue';
 
 const emits = defineEmits(['answerSent']); 
 const answer = ref('');
@@ -19,7 +19,11 @@ function handleMouseOver() {
     answerInput.value.focus();
 }
 
-defineExpose({getAnswer});
+const clearInput = () => {
+    answer.value = '';
+}
+
+defineExpose({getAnswer, clearInput});
 </script>
 
 <template>

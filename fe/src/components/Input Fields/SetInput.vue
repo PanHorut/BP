@@ -18,7 +18,13 @@ function getAnswer() {
     emits('answerSent', variables.value);
 }
 
-defineExpose({getAnswer});
+const clearInput = () => {
+    variables.value.forEach(variable => {
+        variable.answer = ''; 
+    });
+};
+
+defineExpose({getAnswer, clearInput});
 
 function getVariables() {
   variables.value = [];
