@@ -1,10 +1,13 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getParentSkills, createSkill } from '@/api/apiClient'; // Import the required functions
+import { getParentSkills, createSkill } from '@/api/apiClient'; 
+import ToastManager from '@/components/Toast/ToastManager.vue';
 
 const skillName = ref(''); 
 const parentSkillId = ref(null); 
 const parentSkills = ref([]); 
+
+const toastManager = ref(null);
 
 onMounted(async () => {
   try {
@@ -16,24 +19,26 @@ onMounted(async () => {
 
 const addSkill = async () => {
   if (!skillName.value.trim()) {
-    alert('Please enter a skill name.');
+    toastManager.value.showToast('Nebyl zadán název dovednosti!', 'error');
+
     return;
   }
 
   try {
     const newSkill = await createSkill(skillName.value, parentSkillId.value);
 
-    alert(`Skill "${newSkill.name}" added successfully!`);
+    toastManager.value.showToast('Dovednost byla vytvořena', 'success');
     skillName.value = ''; 
     parentSkillId.value = null;
   } catch (error) {
-    console.error('Error adding skill:', error);
-    alert('Failed to add skill. Please try again.');
+    toastManager.value.showToast('Chyba!', 'error');
   }
 };
 </script>
 
 <template>
+    <ToastManager ref="toastManager" />
+
   <div class="p-4 max-w-md mx-auto bg-white rounded-lg shadow-md mt-64">
 
     <!-- Input for the new skill name -->
