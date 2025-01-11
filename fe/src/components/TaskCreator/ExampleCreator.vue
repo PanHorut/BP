@@ -95,9 +95,15 @@ const importExample = (example, answer, steps) => {
   stepInputs.value = steps;
 }
 
+const clearInput = () => {
+  exampleInput.value = '';
+  answerInput.value = '';
+  stepInputs.value = [];
+}
+
 
 // Expose the getData method to parent components
-defineExpose({ getData, importExample });
+defineExpose({ getData, importExample, clearInput });
 
 onMounted(() => {
   renderMathJax();

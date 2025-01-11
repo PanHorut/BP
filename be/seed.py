@@ -7,10 +7,11 @@ django.setup()
 from api.models import Skill
 
 def seed_data():
-    Skill.objects.create()
 
 
-    
+    Skill.objects.create(name="Mocniny a odmocniny")
+    Skill.objects.create(name="Výrazy")
+    Skill.objects.create(name="Procenta")
 
     
     

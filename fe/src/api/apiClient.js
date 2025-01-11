@@ -2,7 +2,7 @@ import axios from 'axios';
 import qs from 'qs'; 
 
 const apiClient = axios.create({
-  baseURL:  'https://bp-production-37c0.up.railway.app/api/', //     'http://localhost:8000/api/'
+  baseURL: 'https://bp-production-37c0.up.railway.app/api/', //'http://localhost:8000/api/'
   headers: {
     'Content-Type': 'application/json',
   },
@@ -83,8 +83,6 @@ export const getSkill = async (id) => {
   }
 }
 
-
-
 export const getExamples = async (selectedIds) => {
   try {
     const response = await apiClient.get('examples/', {
@@ -111,5 +109,47 @@ export const getLeafSkills = async () => {
     console.error("Error fetching skills:", error)
   }
 }
+
+export const getTasks = async () => {
+  try {
+    const response = await apiClient.get('tasks/'); 
+    return response.data;
+    
+  } catch (error) {
+    console.error("Error fetching skills:", error)
+  }
+}
+
+export const deleteExample = async (exampleId) => {
+  try {
+    const response = await apiClient.delete(`example/${exampleId}/delete/`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error deleting example.';
+  }
+};
+
+export const deleteTask = async (taskId) => {
+  try {
+    const response = await apiClient.delete(`tasks/${taskId}/delete/`);
+    console.log('Task deleted successfully');
+  } catch (error) {
+    console.error('Error deleting task:', error);
+  }
+};
+
+export const createSkill = async (name, parentSkillId = null) => {
+  try {
+    const response = await apiClient.post('create-skill/', {
+      name,
+      parent_skill: parentSkillId, 
+    });
+    return response.data; 
+  } catch (error) {
+    throw error.response?.data?.error || 'Error creating skill.';
+  }
+};
+
+
 
 export default apiClient;

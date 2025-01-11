@@ -14,5 +14,11 @@ urlpatterns = [
     path('create-record/', views.create_example_record, name='create-example-record'),
     path('update-record/', views.update_example_record, name='update-example-record'),
 
+    path('tasks/', views.get_tasks, name='get-tasks'),
+    path('example/<int:example_id>/delete/', views.delete_example, name='delete_example'),
+    path('tasks/<int:task_id>/delete/', views.delete_task, name='delete_task'),
+    path('create-skill/', views.create_skill, name='create_skill'),
+
+
 
 ]

@@ -2,6 +2,7 @@
 import { ref, defineProps, defineEmits, nextTick } from 'vue';
 import ExampleCreator from './ExampleCreator.vue';
 import { postExamples } from '@/api/apiClient';
+import ToastManager from '@/components/Toast/ToastManager.vue';
 
 const props = defineProps({
   selectedSkills: {
@@ -19,7 +20,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['importTask']);
+const emit = defineEmits(['importTask', 'submit']);
 
 const exampleCount = ref(10);  
 const examples = ref([]);
@@ -32,6 +33,8 @@ const taskJSON = ref();
 const task = ref();
 
 const validJSON = ref(false);
+
+const toastManager = ref(null);
 
 const addExampleCreators = () => {
   exampleCount.value += 6;
@@ -50,8 +53,24 @@ const collectExamples = () => {
   submitExamples();
 };
 
+const clearExamples = () => {
+  exampleCreators.value.forEach((creator) => {
+    if (creator) {
+      creator.clearInput();
+    }
+  });
+}
+
 const submitExamples = async () => {
-  await postExamples(examples, props.selectedSkills, props.taskName);
+  try{
+    await postExamples(examples, props.selectedSkills, props.taskName);
+    toastManager.value.showToast('Sada byla vytvořena!', 'success');
+    emit('submit');
+    clearExamples();
+
+  }catch(error){
+    toastManager.value.showToast('Chyba', 'error');
+  }
 };
 
 const exportJSON = () => {
@@ -157,6 +176,7 @@ const handleJSON = (event) => {
 
 <template>
   <div class="flex flex-col items-center">
+    <ToastManager ref="toastManager" />
     <div class="flex">
       <div @click="exportJSON" class="p-2 border-2 border-primary bg-primary text-white font-bold absolute right-4 top-32 rounded-md cursor-pointer">EXPORT</div>
       <div @click="toggleImportWindow" class="p-2  border-2 border-primary text-primary font-bold absolute right-28 top-32 rounded-md cursor-pointer">IMPORT</div>

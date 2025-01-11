@@ -23,7 +23,11 @@ const importSkills = (skills) => {
   selectedSkills.value = skills;
 }
 
-defineExpose({ importSkills });
+const clearSkills = () => {
+  selectedSkills.value = [];
+}
+
+defineExpose({ importSkills, clearSkills });
 
 </script>
 

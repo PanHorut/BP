@@ -22,6 +22,12 @@ const applyImport = (name, skills) => {
     skillList.value.importSkills(skills);
 }
 
+const clearInput = () => {
+    taskName.value = ''; 
+    skillList.value.clearSkills();
+    
+};
+
 </script>
 
 <template>
@@ -36,7 +42,7 @@ const applyImport = (name, skills) => {
         <InputTypeSelector 
             v-model="selectedInputType">
         </InputTypeSelector>
-        <ExamplesList :selectedSkills="selectedSkills" :inputType="selectedInputType" :taskName="taskName" @importTask="applyImport"></ExamplesList>
+        <ExamplesList :selectedSkills="selectedSkills" :inputType="selectedInputType" :taskName="taskName" @importTask="applyImport" @submit="clearInput"></ExamplesList>
         </div>
     </div>
 </template>

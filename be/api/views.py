@@ -6,6 +6,10 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample
 from .serializers import ExampleSerializer, ExampleSkillSerializer, SkillSerializer, TaskSerializer, RecordInitSerializer
+from django.http import JsonResponse
+from django.db.models import Prefetch
+
+
 
 
 
@@ -196,3 +200,114 @@ def update_example_record(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+@api_view(['GET'])
+def get_tasks(request):
+    # Prefetch the related data: examples, answers, and example skills
+    example_skills = Prefetch('exampleskill_set', queryset=ExampleSkill.objects.select_related('skill'))
+    tasks = Task.objects.prefetch_related(
+        'example_set__answers',        # Fetch related answers
+        'example_set__exampleskill_set'  # Prefetch related ExampleSkills
+    )
+
+    # Prepare the response data
+    data = [
+        {
+            "task_id": task.id,
+            "task_name": task.name,
+            "examples": [
+                {
+                    "example_id": example.id,
+                    "example_text": example.example,
+                    "input_type": example.input_type,
+                    "answers": [
+                        {
+                            "answer_id": answer.id,
+                            "answer_text": answer.answer
+                        }
+                        for answer in example.answers.all()
+                    ],
+                    "skills": [
+                        {
+                            "skill_id": example_skill.skill.id,
+                            "skill_name": example_skill.skill.name
+                        }
+                        for example_skill in example.exampleskill_set.all()
+                    ]
+                }
+                for example in task.example_set.all()
+            ]
+        }
+        for task in tasks
+    ]
+
+    # Return the data as JSON
+    return JsonResponse(data, safe=False)
+
+@api_view(['DELETE'])
+def delete_example(request, example_id):
+    # Get the example object, or return 404 if not found
+    example = get_object_or_404(Example, id=example_id)
+    
+    try:
+        # Start a database transaction to ensure consistency
+        with transaction.atomic():
+            # Delete the example
+            example.delete()
+        
+        # Return a successful response with no content
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        # In case of an error, return an internal server error response
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['DELETE'])
+def delete_task(request, task_id):
+
+    try:
+        # Start a transaction to ensure consistency
+        with transaction.atomic():
+            # Fetch the task by ID
+            task = get_object_or_404(Task, id=task_id)
+
+            # Delete the task and all related objects (Examples, Answers, etc.)
+            task.delete()
+
+        # If successful, return a 204 No Content response
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    except Exception as e:
+        # Handle any potential errors (e.g., foreign key constraint issues, etc.)
+        return Response(
+            {"error": f"Error deleting task: {str(e)}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+@api_view(['POST'])
+def create_skill(request):
+    try:
+        # Extract data from the request
+        name = request.data.get('name')
+        parent_skill_id = request.data.get('parent_skill')  # Optional
+
+        if not name:
+            return Response({"error": "Skill name is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate and fetch the parent skill if provided
+        parent_skill = None
+        if parent_skill_id:
+            parent_skill = get_object_or_404(Skill, id=parent_skill_id)
+
+        # Create the new skill
+        with transaction.atomic():  # Ensure transactional consistency
+            skill = Skill.objects.create(name=name, parent_skill=parent_skill)
+
+        # Serialize and return the created skill data
+        return JsonResponse({
+            "id": skill.id,
+            "name": skill.name,
+            "parent_skill": skill.parent_skill.id if skill.parent_skill else None,
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        # Handle any unexpected errors
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
