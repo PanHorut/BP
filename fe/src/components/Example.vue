@@ -119,7 +119,7 @@ const skip = async () => {
 
 const finish = async () => {
   const result = await deleteRecord(student_id, props.example.id, record_date.value);
-  router.push({ name: 'home' });
+  emits('finished');
 
 }
 

@@ -5,5 +5,7 @@ import { RouterView } from 'vue-router';
 
 <template>
   <Navbar />
-  <RouterView class="bg-white"/>
+  <div class="bg-white">
+    <RouterView />
+  </div>
 </template>

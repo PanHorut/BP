@@ -1,6 +1,6 @@
 <script setup>
 import Topics from '@/components/MainMenu/Topics.vue';
-import { RouterLink, useRoute } from 'vue-router';
+import { RouterLink } from 'vue-router';
 
 
 </script>

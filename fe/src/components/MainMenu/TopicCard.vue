@@ -20,7 +20,7 @@ const props = defineProps({
 const router = useRouter()
 
 function goToTopicDetail() {
-  router.push({ name: 'topic', params: { id: props.id } })
+  router.push({ name: 'topic', params: { id: Number(props.id) } })
 }
 </script>
 

@@ -26,6 +26,8 @@ const mistakes = ref(0);
 const skipped = ref(0);
 const total = ref(0); 
 
+const showSummary = ref(false);
+
 const preloadImages = () => {
   const correct = new Image();
   const wrong = new Image();
@@ -39,41 +41,35 @@ const preloadImages = () => {
 
 
 const displayNext = async (data) => {
+  
 
   if (curr_index.value >= 0 && curr_index.value < examples.value.length) {
-
-    // skipped example
-    if(data.skipped) {
-      skipped.value++;
-      curr_index.value++;
-      await nextTick(); 
-      return;
-    }
-
-    // correct answer
-    if (data.isCorrect) {
-      displayIcon(true);
-      
-      curr_index.value++;
-      await nextTick(); 
-      return;
-
-    // wrong answer
-    }else if(!data.isCorrect && data.nextExample){
-      displayIcon(false);
-
-      mistakes.value++;
-      curr_index.value++;
-      await nextTick(); 
-      return;
     
-    } else {
-
+    if (data.skipped) {
+      skipped.value++;
+    } 
+    else if (data.isCorrect) {
+      displayIcon(true);
+    } 
+    else if (!data.isCorrect && data.nextExample) {
+      displayIcon(false);
+      mistakes.value++;
+    } 
+    else {
       mistakes.value++;
       displayIcon(false);
       return;
     }
-  } else {
+
+    curr_index.value++;
+    await nextTick();
+
+    if (curr_index.value === examples.value.length) {
+      total.value = examples.value.length - skipped.value;  
+      showSummary.value = true;
+    }
+    
+  }else {
     console.error("index is out of bounds:", curr_index.value);
   }
 };
@@ -92,7 +88,6 @@ const fetchExamples = async (topics) => {
 };
 
 const displayIcon = async (correct) => {
-  console.log(correct);
 
   isCorrect.value = correct;
 
@@ -109,6 +104,11 @@ const displayIcon = async (correct) => {
   }, 400);
 };
 
+const displaySummary = () => {
+  total.value = examples.value.length - curr_index.value;
+  showSummary.value = true;
+};
+
 
 onMounted(() => {
   preloadImages();
@@ -121,18 +121,20 @@ onMounted(() => {
 </script>
 
 <template>
-    <SpecialCharsBar v-if="examples.length > curr_index"></SpecialCharsBar>
-    <div v-if="examples.length > curr_index" class="flex-col items-center justify-center">
+    <SpecialCharsBar v-if="examples.length > curr_index && !showSummary"></SpecialCharsBar>
+    <div v-if="examples.length > curr_index && !showSummary" class="flex-col items-center justify-center">
       <ProgressBar :totalExamples="examples.length" :finishedExamples="curr_index"></ProgressBar>
       <Spinner v-if="loading" class="mt-48"/>
     </div>
     <div class="flex items-center justify-center">
       
       
-      <Example v-if="examples.length > curr_index" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" @skipped="displayNext" :key="curr_index"></Example>
+      <Example v-if="examples.length > curr_index && !showSummary" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
       <img v-if="examples.length > curr_index"   :src="isCorrect ? images.correct.src : images.wrong.src" 
       class="w-48 h-48 absolute t-50" :class="showIcon ? '' : 'hidden'" >
-      <Summary v-else :total="total" :skipped="skipped" :mistakes="mistakes"></Summary>
       
+      <Summary v-if="showSummary" :total="total" :skipped="skipped" :mistakes="mistakes"></Summary>
     </div>
+
+    
 </template>
