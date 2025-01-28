@@ -25,5 +25,13 @@ COPY . .
 # Expose the necessary port (e.g., 8000 for Django)
 EXPOSE 8000
 
+# Copy the entrypoint script and ensure it’s executable
+COPY docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Use the entrypoint script to handle migrations and then start the app
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+
+
 # Use Gunicorn to run the Django application
-CMD ["gunicorn", "be.wsgi:application", "--bind", "0.0.0.0:8000"]
+#CMD ["gunicorn", "be.wsgi:application", "--bind", "0.0.0.0:8000"]
