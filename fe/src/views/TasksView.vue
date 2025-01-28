@@ -1,8 +1,10 @@
 <script setup>
 import { ref, onMounted, watch, nextTick } from 'vue';
 import { getTasks, deleteExample, deleteTask } from '@/api/apiClient'; // Adjust the path to match your project structure
+import Spinner from '@/components/Spinner.vue';
 
 const tasks = ref([]);
+const loading = ref(true);
 
 // Function to render MathJax content
 const renderMathJax = () => {
@@ -17,7 +19,13 @@ const renderMathJax = () => {
 
 // Fetch tasks and render MathJax when tasks update
 onMounted(async () => {
+  try{
   tasks.value = await getTasks();
+  } catch (error) {
+    console.error("Failed to fetch tasks:", error);
+  } finally {
+    loading.value = false;
+  }
   nextTick(() => renderMathJax()); // Render MathJax after the DOM updates
 });
 
@@ -56,12 +64,16 @@ const handleDeleteTask = async (taskId, taskIndex) => {
 </script>
 
 <template>
+
+    
+
     <div class="max-w-4xl mx-auto p-4">
         <div class="flex flex-col items-center justify-center">
             <h1 class="text-4xl font-bold text-center">Sady příkladů</h1>
             <RouterLink to="/sandbox" class="bg-green-500 hover:bg-green-700 p-4 cursor-pointer text-xl font-bold text-white rounded-lg my-4">
                 Vytvořit novou sadu
             </RouterLink>
+            <Spinner v-if="loading" />
         </div>
   
       <div

@@ -13,6 +13,9 @@ urlpatterns = [
     path('examples/', views.get_examples, name='get-examples'),
     path('create-record/', views.create_example_record, name='create-example-record'),
     path('update-record/', views.update_example_record, name='update-example-record'),
+    path('delete-record/', views.delete_example_record, name='delete-example-record'),
+    path('skip-example/', views.skip_example, name='skip-example'),
+    
 
     path('tasks/', views.get_tasks, name='get-tasks'),
     path('example/<int:example_id>/delete/', views.delete_example, name='delete_example'),

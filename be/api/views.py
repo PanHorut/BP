@@ -8,6 +8,8 @@ from .models import Task, Example, Answer, Student, Skill, ExampleSkill, Student
 from .serializers import ExampleSerializer, ExampleSkillSerializer, SkillSerializer, TaskSerializer, RecordInitSerializer
 from django.http import JsonResponse
 from django.db.models import Prefetch
+import json
+import random
 
 
 
@@ -113,30 +115,43 @@ def get_skill(request, skill_id):
 
 @api_view(['GET'])
 def get_examples(request):
-    skill_ids = request.query_params.getlist('skill_ids')
+    topics = request.query_params.get('topics')
 
-    if not skill_ids:
-        return Response({"error": "No skill IDs provided"}, status=status.HTTP_400_BAD_REQUEST)
+    if not topics:
+        return Response({"error": "No topics provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Get all examples that have the given skill IDs
-    examples = Example.objects.filter(exampleskill__skill__id__in=skill_ids).distinct()
+    try:
+        topics_data = json.loads(topics)
+    except json.JSONDecodeError:
+        return Response({"error": "Invalid JSON format for topics"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Serialize the examples along with their answers
-    example_data = [
-        {
-            "id": example.id,
-            "example": example.example,
-            "input_type": example.input_type,
-            "answers": [
-                {
-                    "id": answer.id,
-                    "answer": answer.answer
-                }
-                for answer in example.answers.all()
-            ]
-        }
-        for example in examples
-    ]
+    example_data = []
+
+    for topic in topics_data:
+        skill_id = topic.get('id')
+        count = topic.get('count')
+
+        if not skill_id or not count:
+            return Response({"error": "Skill ID or count missing in topics"}, status=status.HTTP_400_BAD_REQUEST)
+
+        count = int(count)  # Convert count to integer
+        examples = Example.objects.filter(exampleskill__skill__id=skill_id).order_by('?').distinct()[:count]
+        for example in examples:
+            example_data.append({
+                "id": example.id,
+                "example": example.example,
+                "input_type": example.input_type,
+                "answers": [
+                    {
+                        "id": answer.id,
+                        "answer": answer.answer
+                    }
+                    for answer in example.answers.all()
+                ]
+            })
+
+    # Shuffle the final list of examples to ensure they are mixed
+    random.shuffle(example_data)
 
     return Response(example_data, status=status.HTTP_200_OK)
 
@@ -199,7 +214,50 @@ def update_example_record(request):
         return Response({"message": "Record updated successfully", "next_example": next_example}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['POST'])
+def delete_example_record(request):
+    student = request.data.get('student_id')
+    example = request.data.get('example_id')
+    date = request.data.get('date')
+
+    if not student or not example or not date:
+        return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    student_example = get_object_or_404(StudentExample, student_id=student, example_id=example, date=date)
+
+    try:
+        with transaction.atomic():
+            student_example.delete()
+
+        return Response({"message": "Record successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+    except StudentExample.DoesNotExist:
+        return Response({"error": "Record not found"}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+def skip_example(request):
+    student = request.data.get('student_id')
+    example = request.data.get('example_id')
+    date = request.data.get('date')
+
+    if not student or not example or not date:
+        return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    student_example = get_object_or_404(StudentExample, student_id=student, example_id=example, date=date)
+
+    try:
+        with transaction.atomic():
+            student_example.skipped = True
+            student_example.attempts = 0
+            student_example.duration = 0
+                        
+            student_example.save()
         
+        return Response({"message": "Example skipped"}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 @api_view(['GET'])
 def get_tasks(request):
     # Prefetch the related data: examples, answers, and example skills

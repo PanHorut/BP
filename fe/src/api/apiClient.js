@@ -2,7 +2,7 @@ import axios from 'axios';
 import qs from 'qs'; 
 
 const apiClient = axios.create({
-  baseURL: 'https://bp-production-37c0.up.railway.app/api/',// 'http://localhost:8000/api/'
+  baseURL:  'https://bp-production-37c0.up.railway.app/api/',// 'http://localhost:8000/api/'
   headers: {
     'Content-Type': 'application/json',
   },
@@ -36,6 +36,35 @@ export const updateRecord = async (studentId, exampleId, isCorrect, time, date) 
       throw error.response?.data?.error || 'Error updating record.';
     }
 };
+
+export const deleteRecord = async (studentId, exampleId, date) => {
+
+  try {
+    const response = await apiClient.post('delete-record/', {
+      student_id: studentId,
+      example_id: exampleId,
+      date
+      });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error updating record.';
+  }
+
+}
+
+export const skipExample = async (studentId, exampleId, date) => {
+  try {
+    const response = await apiClient.post('skip-example/', {
+      student_id: studentId,
+      example_id: exampleId,
+      date,
+      
+    });
+    return response.data;
+  }catch (error) {
+      throw error.response?.data?.error || 'Error skipping example.';
+    }
+}
 
 export const postExamples = async (examples, selectedSkills, taskName) => {
 
@@ -83,11 +112,11 @@ export const getSkill = async (id) => {
   }
 }
 
-export const getExamples = async (selectedIds) => {
+export const getExamples = async (topics) => {
   try {
     const response = await apiClient.get('examples/', {
       params: {
-        skill_ids: selectedIds,
+        topics: JSON.stringify(topics),
       },
       paramsSerializer: (params) => {
         return qs.stringify(params, { arrayFormat: 'repeat' });

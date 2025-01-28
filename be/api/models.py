@@ -37,6 +37,7 @@ class StudentExample(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     duration = models.IntegerField(default=0)
     attempts = models.IntegerField(default=0) 
+    skipped = models.BooleanField(default=False)
 
     class Meta:
         constraints = [

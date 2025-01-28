@@ -7,6 +7,8 @@ import { useRoute } from 'vue-router';
 import { getExamples } from '@/api/apiClient';
 import correctIcon from '@/assets/img/correct.png';
 import wrongIcon from '@/assets/img/wrong.png'
+import Spinner from '@/components/Spinner.vue';
+import Summary from '@/components/Example/Summary.vue';
 
 const examples = ref([]); 
 const curr_index = ref(0); 
@@ -17,6 +19,12 @@ const isCorrect = ref(false);
 const showIcon = ref(false);
 
 const images = ref({});
+
+const loading = ref(true);
+
+const mistakes = ref(0);
+const skipped = ref(0);
+const total = ref(0); 
 
 const preloadImages = () => {
   const correct = new Image();
@@ -33,7 +41,16 @@ const preloadImages = () => {
 const displayNext = async (data) => {
 
   if (curr_index.value >= 0 && curr_index.value < examples.value.length) {
-    
+
+    // skipped example
+    if(data.skipped) {
+      skipped.value++;
+      curr_index.value++;
+      await nextTick(); 
+      return;
+    }
+
+    // correct answer
     if (data.isCorrect) {
       displayIcon(true);
       
@@ -41,13 +58,18 @@ const displayNext = async (data) => {
       await nextTick(); 
       return;
 
+    // wrong answer
     }else if(!data.isCorrect && data.nextExample){
       displayIcon(false);
+
+      mistakes.value++;
       curr_index.value++;
       await nextTick(); 
       return;
-
+    
     } else {
+
+      mistakes.value++;
       displayIcon(false);
       return;
     }
@@ -56,9 +78,16 @@ const displayNext = async (data) => {
   }
 };
 
-const fetchExamples = async (selectedIds) => {
+const fetchExamples = async (topics) => {
   
-    examples.value = await getExamples(selectedIds);
+  try {
+    examples.value = await getExamples(topics);
+    total.value = examples.value.length;
+  } catch (error) {
+    console.error("Failed to fetch examples:", error);
+  } finally {
+    loading.value = false;
+  }
  
 };
 
@@ -85,23 +114,25 @@ onMounted(() => {
   preloadImages();
 
   if (route.query.topics) {
-    topics.value = JSON.parse(route.query.topics);
-    fetchExamples(topics.value);
+      topics.value = JSON.parse(route.query.topics);
+      fetchExamples(topics.value);
   }
 });
 </script>
 
 <template>
-    <SpecialCharsBar></SpecialCharsBar>
-    <div class="flex justify-center">
+    <SpecialCharsBar v-if="examples.length > curr_index"></SpecialCharsBar>
+    <div v-if="examples.length > curr_index" class="flex-col items-center justify-center">
       <ProgressBar :totalExamples="examples.length" :finishedExamples="curr_index"></ProgressBar>
+      <Spinner v-if="loading" class="mt-48"/>
     </div>
     <div class="flex items-center justify-center">
-      <Example v-if="examples.length > curr_index" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" :key="curr_index"></Example>
+      
+      
+      <Example v-if="examples.length > curr_index" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" @skipped="displayNext" :key="curr_index"></Example>
       <img v-if="examples.length > curr_index"   :src="isCorrect ? images.correct.src : images.wrong.src" 
       class="w-48 h-48 absolute t-50" :class="showIcon ? '' : 'hidden'" >
-      <div v-else class="flex justify-center">
-        <RouterLink to="/"  class="text-center text-4xl mt-20 border-4 border-blue-600 p-5 rounded-3xl cursor-pointer">Zpět na hlavní stránku</RouterLink>
-      </div>
+      <Summary v-else :total="total" :skipped="skipped" :mistakes="mistakes"></Summary>
+      
     </div>
 </template>

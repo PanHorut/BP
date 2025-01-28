@@ -5,7 +5,10 @@ import FractionInput from './Input Fields/FractionInput.vue';
 import VariableInput from './Input Fields/VariableInput.vue';
 import SetInput from './Input Fields/SetInput.vue';
 import Timer from '@/components/Example/Timer.vue';
-import { updateRecord, createRecord } from '@/api/apiClient';
+import { updateRecord, createRecord, skipExample, deleteRecord } from '@/api/apiClient';
+import { useRouter } from 'vue-router';
+
+
 
 
 
@@ -18,7 +21,7 @@ const props = defineProps({
   }
 });
 
-const emits = defineEmits(['answerSent']);
+const emits = defineEmits(['answerSent', 'skipped', 'finished']);
 const renderedExample = computed(() => `\\(${props.example.example}\\)`);
 const inlineInput = ref(null);
 const fractionInput = ref(null);
@@ -27,6 +30,7 @@ const variableInput = ref(null);
 const timer = ref(null);
 const student_id = 1;
 const record_date = ref('');
+const router = useRouter();
 
 const checkInline = async (answer) => {
 
@@ -107,6 +111,18 @@ const initRecord = async () => {
   
 }
 
+const skip = async () => {
+  const result = await skipExample(student_id, props.example.id, record_date.value);
+  emits('skipped', {skipped: true});
+
+}
+
+const finish = async () => {
+  const result = await deleteRecord(student_id, props.example.id, record_date.value);
+  router.push({ name: 'home' });
+
+}
+
 watch(
   () => props.example,
   () => {
@@ -115,9 +131,6 @@ watch(
   { immediate: true }
 );
 
-const handleNumDown = (event) => {
-    
-};
 
 function renderMathJax() {
   if (window.MathJax) {
@@ -178,10 +191,11 @@ function extractFraction(fraction) {
   }
 }
 
+
+
 // Set up event listeners on mount
 onMounted(() => {
   initRecord()
-  window.addEventListener('keydown', handleNumDown);
   window.addEventListener('keydown', handleEnter);
   renderMathJax();
   timer.value.startTimer();
@@ -189,14 +203,18 @@ onMounted(() => {
 
 // Clean up event listeners on unmount
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleNumDown);
   window.removeEventListener('keydown', handleEnter);
 });
 </script>
 
 <template>
   <div class="w-full flex flex-col items-center justify-center">
-    <Timer ref="timer" class="absolute right-3 top-24"></Timer>
+    <div class="absolute right-4 top-24">
+      <Timer ref="timer" ></Timer>
+      <div @click="finish" class="text-center text-xl font-bold text-white hover:text-red-600 bg-red-600 hover:bg-white border-4 border-red-600 p-2 rounded-2xl cursor-pointer">
+        UKONČIT
+    </div>
+    </div>
   <div class="flex items-center justify-center mt-40">
     
     <div class="flex flex-col">
@@ -216,10 +234,16 @@ onUnmounted(() => {
     </div>
     </div>
   </div>
-  <div class="flex justify-center">
+  <div class="flex flex-col items-center justify-center">
     <div @click="getAnswer" class="text-center text-4xl font-black text-blue-600 border-4 border-blue-600 p-5 rounded-3xl cursor-pointer my-10">
       Mám hotovo!
     </div>
+
+    <div @click="skip" class="text-center text-2xl font-black text-gray-600 border-4 border-gray-600 px-8 py-2 rounded-3xl cursor-pointer mt-4">
+      NEVÍM
+    </div>
+
+
   </div>
 </div>
 </template>
