@@ -21,15 +21,35 @@ const props = defineProps({
     }
 })
 
+const getMistakes = (mistakes) => {
+    if(mistakes === 1){
+        return 'chybu'
+    } else if(mistakes > 1 && mistakes < 5){
+        return 'chyby'
+    } else {
+        return 'chyb'
+    }
+}
+
+const getExamples = (examples) => {
+    if(examples === 1){
+        return 'příklad'
+    } else if(examples > 1 && examples < 5){
+        return 'příklady'
+    } else {
+        return 'příkladů'
+    }
+}
+
 </script>
 
 <template>
     <div class="flex flex-col items-center justify-center mt-24 border-4 border-primary rounded-xl px-24 py-4">
         <h1 class="text-6xl font-bold text-primary">Hotovo!</h1>
-        <p class="text-3xl mt-8">Celkem jsi spočítal <span class="font-black text-4xl">{{ props.total}}</span> {{ props.total > 4 ? 'příkladů' : 'příklady'}}</p>
+        <p class="text-3xl mt-8">Celkem jsi spočítal <span class="font-black text-4xl">{{ props.total}}</span> {{ getExamples(props.total)}}</p>
         <div class="text-2xl mt-4 flex flex-col items-center">
-            <p>Z toho jsi <span class="font-black text-3xl text-red-600">{{ props.mistakes }}x</span> nespočítal příklad správně </p>
-            <p>a <span class="font-black text-3xl">{{ props.skipped }}</span> {{ props.skipped > 4 ? 'příkladů' : 'příklady'}} jsi přeskočil </p>
+            <p>Udělal jsi <span class="font-black text-3xl text-red-600">{{ props.mistakes }}</span> {{ getMistakes(props.mistakes) }} </p>
+            <p>a <span class="font-black text-3xl">{{ props.skipped }}</span> {{ getExamples(props.skipped) }} jsi přeskočil </p>
         </div>
 
         <div class="flex justify-center mt-16 mb-6">

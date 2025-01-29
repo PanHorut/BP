@@ -105,7 +105,7 @@ const displayIcon = async (correct) => {
 };
 
 const displaySummary = () => {
-  total.value = examples.value.length - curr_index.value;
+  total.value = curr_index.value-1;
   showSummary.value = true;
 };
 
