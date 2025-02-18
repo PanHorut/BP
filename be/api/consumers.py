@@ -2,7 +2,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from openai import OpenAI
-from be.settings import OPENAI_API_KEY
+#from be.settings import OPENAI_API_KEY
 from pydub import AudioSegment
 
 import io
@@ -36,7 +36,7 @@ class AudioTranscriptionConsumer(AsyncWebsocketConsumer):
             with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as temp_audio_file:
                 temp_audio_file.write(audio_data)
                 temp_audio_file_path = temp_audio_file.name
-            
+            """
             client = OpenAI(api_key=OPENAI_API_KEY)
             with open(temp_audio_file.name, 'rb') as f:
                     response = client.audio.transcriptions.create(
@@ -44,7 +44,8 @@ class AudioTranscriptionConsumer(AsyncWebsocketConsumer):
                         file=f,  
                         language="cs"
                 )
-            print(response.text)    
+            print(response.text)  
+            """  
             
             # Convert the temporary file to a format readable by pydub
 
