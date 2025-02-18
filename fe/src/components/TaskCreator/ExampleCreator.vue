@@ -10,6 +10,7 @@ const props = defineProps({
 });
 
 const exampleInput = ref('');
+const exampleId = ref('');  
 const answerInput = ref(''); // Primary answer input (first one, not part of steps)
 const stepInputs = ref([]); // Start with an empty array for steps
 const focused = ref(false);
@@ -50,6 +51,7 @@ const getData = () => {
 
       return {
       example: exampleInput.value,
+      example_id: exampleId.value ?? null,
       answer: answerInput.value,
       steps: stepInputs.value.map(step => step.value),
       input_type: "VAR"
@@ -59,6 +61,7 @@ const getData = () => {
 
       return {
       example: exampleInput.value,
+      example_id: exampleId.value ?? null,
       answer: answerInput.value,
       steps: stepInputs.value.map(step => step.value),
       input_type: "FRAC"
@@ -68,6 +71,7 @@ const getData = () => {
 
       return {
       example: exampleInput.value,
+      example_id: exampleId.value ?? null,
       answer: answerInput.value,
       steps: stepInputs.value.map(step => step.value),
       input_type: "SET"
@@ -77,6 +81,7 @@ const getData = () => {
       
       return {
       example: exampleInput.value,
+      example_id: exampleId.value ?? null,
       answer: answerInput.value,
       steps: stepInputs.value.map(step => step.value),
       input_type: "INLINE"
@@ -89,10 +94,23 @@ const getData = () => {
   }
 };
 
-const importExample = (example, answer, steps) => {
+const importExample = (example, id, answer, steps) => {
   exampleInput.value = example;
+  exampleId.value = id;
   answerInput.value = answer;
-  stepInputs.value = steps;
+
+  // depends if import is from Tasks overview or from JSON
+  stepInputs.value = steps.map(step => {
+
+    // from JSON
+    if (typeof step === 'string') {
+      return { value: step };
+
+    // from task
+    } else if (step.step_text) {
+      return { value: step.step_text };
+    }
+  });  
 }
 
 const clearInput = () => {
@@ -149,11 +167,10 @@ const addStepInput = () => {
 
         <!-- Dynamically Rendered Step Inputs, only if steps exist -->
         <div v-if="stepInputs.length > 0">
-          <div v-for="(step, index) in stepInputs" :key="index" >
+          <div v-for="(step, index) in stepInputs" :key="index" class="flex items-center mb-1">
             <textarea
-              
               v-model="step.value"
-              placeholder="Zde vložte krok řešení"
+              :placeholder="`Zde vložte ${ index+1 }. krok řešení`"
               class="h-12 p-2 border border-gray-300 rounded"
             ></textarea>
           </div>
@@ -175,7 +192,7 @@ const addStepInput = () => {
         ></div>
 
         <!-- Dynamically Rendered Step Previews, only if steps exist -->
-        <div v-if="renderedSteps.length > 0">
+        <div v-if="renderedSteps.length > 0" class="flex flex-col">
           <div v-for="(step, index) in renderedSteps" :key="index"
             class="border border-gray-300 p-2 h-12 w-48 mb-1 text-md mjx-container"
             v-html="step"

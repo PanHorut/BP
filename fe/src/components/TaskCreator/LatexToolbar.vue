@@ -15,6 +15,7 @@ const notin = computed(() => `\\(\\notin\\)`);
 const inf = computed(() => `\\(\\infty\\)`);
 const real = computed(() => `\\(\\mathbb{R}\\)`);
 const times = computed(() => `\\(\\cdot\\)`);
+const mutliline = computed(() => `\\(\\begin{align*} a = b \\\\ c = d \\end{align*}\\)`); 
 
 function renderMathJax() {
   if (window.MathJax) {
@@ -137,6 +138,11 @@ function insertTextIntoActiveInput(text) {
               @click="insertTextIntoActiveInput('\\cdot')" 
               class="w-16 h-16 bg-primary rounded-xl text-white font-black text-3xl flex items-center justify-center" 
               v-html="times">
+            </button>
+            <button 
+              @click="insertTextIntoActiveInput('\\begin{align*} a = b \\\\ c = d \\end{align*}')" 
+              class="w-16 h-16 bg-primary rounded-xl text-white font-black text-xl flex items-center justify-center" 
+              v-html="mutliline">
             </button>
         </div>
         </div>

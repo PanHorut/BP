@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { getParentSkills } from '@/api/apiClient';
+import { getLandingPageSkills } from '@/api/apiClient';
 
 export const useTopicStore = defineStore('topicStore', {
   state: () => ({
@@ -19,7 +19,7 @@ export const useTopicStore = defineStore('topicStore', {
 
       this.loading = true;
       try {
-        const data = await getParentSkills();
+        const data = await getLandingPageSkills();
         this.topics = data;
         this.lastFetched = now;
       } catch (error) {

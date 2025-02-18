@@ -5,8 +5,9 @@ import FractionInput from './Input Fields/FractionInput.vue';
 import VariableInput from './Input Fields/VariableInput.vue';
 import SetInput from './Input Fields/SetInput.vue';
 import Timer from '@/components/Example/Timer.vue';
-import { updateRecord, createRecord, skipExample, deleteRecord } from '@/api/apiClient';
+import { updateRecord, createRecord, skipExample, deleteRecord, checkAnswer } from '@/api/apiClient';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 
 
@@ -28,62 +29,44 @@ const fractionInput = ref(null);
 const setInput = ref(null);
 const variableInput = ref(null);
 const timer = ref(null);
-const student_id = 1;
 const record_date = ref('');
 const router = useRouter();
+const authStore = useAuthStore(); 
+const student_id = authStore.id || 1;
 
 const checkInline = async (answer) => {
 
-  if(props.answer == answer){
-    
-    const result = await updateRecord(student_id, props.example.id, true, timer.value.getTime(), record_date.value);
-    emits('answerSent', {isCorrect: true, nextExample: true});
-  }else{
-    // false answer
-    const result = await updateRecord(student_id, props.example.id, false, timer.value.getTime(), record_date.value);
-    emits('answerSent', {isCorrect: false, nextExample: result.next_example});
+  
+  const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answer, "inline"); 
+  emits('answerSent', {isCorrect: result.isCorrect, nextExample: result.continue_with_next});
+
+  if(!result.isCorrect){
     clearInput();
-    
   }
-  
-  
+
 };
 
 const checkFraction = async (numerator, denominator) => {
-  const answer = extractFraction(props.answer);
 
-  if(numerator == answer.numerator && denominator == answer.denominator){
-    const result = await updateRecord(student_id, props.example.id, true, timer.value.getTime(), record_date.value);
-    emits('answerSent', {isCorrect: true, nextExample: true});
+  const answer = [numerator, denominator];
+  const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answer, "fraction");
+  emits('answerSent', {isCorrect: result.isCorrect, nextExample: result.continue_with_next}); 
 
-  }else{
-    // false answer
-    const result = await updateRecord(student_id, props.example.id, false, timer.value.getTime(), record_date.value);
-    emits('answerSent', {isCorrect: false, nextExample: result.next_example});
+  if(!result.isCorrect){
     clearInput();
-
   }
- 
+
 }
 
 const checkVariables = async (variables) => {
-  
-  for (const variable of variables) {
 
-    if(variable.answer == variable.correctAnswer){
-      continue;
+  const answers = variables.map(variable => variable.answer);
+  const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answers, "variable");
+  emits('answerSent', {isCorrect: result.isCorrect, nextExample: result.continue_with_next}); 
 
-    }else{
-      // false answer
-      const result = await updateRecord(student_id, props.example.id, false, timer.value.getTime(), record_date.value);
-      emits('answerSent', {isCorrect: false, nextExample: result.next_example});
-      clearInput();
-
-      return;
-    }
+  if(!result.isCorrect){
+    clearInput();
   }
-  const result = await updateRecord(student_id, props.example.id, true, timer.value.getTime(), record_date.value);
-  emits('answerSent', {isCorrect: true, nextExample: true});
 }
 
 const checkSet = async (variables) => {
@@ -106,19 +89,19 @@ const checkSet = async (variables) => {
 }
 
 const initRecord = async () => {
-  const result = await createRecord(student_id, props.example.id);
+  const result = await createRecord(student_id , props.example.id);
   record_date.value = result.date;
   
 }
 
 const skip = async () => {
-  const result = await skipExample(student_id, props.example.id, record_date.value);
+  const result = await skipExample(student_id , props.example.id, record_date.value);
   emits('skipped', {skipped: true});
 
 }
 
 const finish = async () => {
-  const result = await deleteRecord(student_id, props.example.id, record_date.value);
+  const result = await deleteRecord(student_id , props.example.id, record_date.value);
   emits('finished');
 
 }
@@ -177,28 +160,13 @@ const clearInput = () => {
   }
 }
 
-function extractFraction(fraction) {
-  const regex = /\\frac\{([^\}]+)\}\{([^\}]+)\}/; // Matches \frac{numerator}{denominator}
-  const match = fraction.match(regex);
-
-  if (match) {
-    const numerator = match[1]; // Captures the numerator
-    const denominator = match[2]; // Captures the denominator
-    return { numerator, denominator };
-  } else {
-    console.error('Invalid fraction format');
-    return null;
-  }
-}
-
-
-
 // Set up event listeners on mount
 onMounted(() => {
   initRecord()
   window.addEventListener('keydown', handleEnter);
   renderMathJax();
   timer.value.startTimer();
+  
 });
 
 // Clean up event listeners on unmount
@@ -218,7 +186,6 @@ onUnmounted(() => {
   <div class="flex items-center justify-center mt-40">
     
     <div class="flex flex-col">
-      
       <div class="text-8xl">
         
         <div class="flex w-32 items-center">

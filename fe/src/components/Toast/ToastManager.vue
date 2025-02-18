@@ -1,33 +1,20 @@
 <script setup>
-import { ref } from 'vue';
+import { useToastStore } from '@/stores/useToastStore';
 import Toast from './Toast.vue';
 
-const toasts = ref([]);
+const toastStore = useToastStore();
 
-// Function to show a toast
-const showToast = (message, type = 'info') => {
-  const newToast = {
-    message,
-    type,
-    visible: true,
-  };
-  toasts.value.push(newToast);
-};
-
-// Function to remove a toast by index
+// Remove toast by index
 const removeToast = (index) => {
-  toasts.value.splice(index, 1);
+  toastStore.removeToast(index);
 };
-
-defineExpose({ showToast });
-
 </script>
 
 <template>
   <div>
     <!-- Loop through toasts and display them -->
     <Toast
-      v-for="(toast, index) in toasts"
+      v-for="(toast, index) in toastStore.toasts"
       :key="index"
       :message="toast.message"
       :type="toast.type"

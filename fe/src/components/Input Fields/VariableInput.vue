@@ -35,6 +35,8 @@ function getVariables() {
             variables.value.push({ key: key.trim(), correctAnswer: value.trim(), answer: '' });
         }
     });
+
+    
 }
 
 watch(() => props.answer, getVariables, { immediate: true });
@@ -44,7 +46,7 @@ function updateAnswers() {
         acc[variable.key] = variable.answer;
         return acc;
     }, {});
-    emits('updateAnswers', answers);
+    //emits('updateAnswers', answers);
 }
 </script>
 

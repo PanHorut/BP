@@ -1,120 +1,114 @@
 <script setup>
 import { ref, defineProps, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getSkill } from '@/api/apiClient';
-import SubTopic from '@/components/SubTopic.vue';
+import { getSkill, getRelatedSkillsTree, getChildrenSkillsTree, getOperationSkills } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
-  
+import OperationButton from '@/components//TopicSelector/OperationButton.vue';
+import SubTopic from '@/components/TopicSelector/SubTopic.vue';
+
 const props = defineProps({
-    id: {
+  id: {
     required: true
-    }
-  })
+  }
+});
 
 const topic = ref(null);
 const subtopics = ref([]);
 const selectedSubtopics = ref([]);
+const operations = ref([]);
 const noTopics = ref(false);
-
 const loading = ref(true);
-
 
 onMounted(async () => {
   try {
-    const response = await getSkill(props.id);
-    topic.value = response.skill;
-    subtopics.value = response.child_skills;
+    topic.value = await getSkill(props.id);
+
+    if(topic.value.skill_type === 'OPERATION') {
+      subtopics.value = await getRelatedSkillsTree(props.id);
+
+    } else if(topic.value.skill_type === 'NUMBER_DOMAIN') {
+      subtopics.value = await getChildrenSkillsTree(props.id, false);
+      operations.value = await getOperationSkills(props.id);
+      
+    } else if(topic.value.skill_type === 'EQUATION') {
+      subtopics.value = await getChildrenSkillsTree(props.id, true);
+    } 
+
+    selectedSubtopics.value.push(topic.value);
+
   } catch (error) {
     console.error("Failed to fetch skill data:", error);
   } finally {
-    loading.value = false; 
+    loading.value = false;
   }
+});
 
-})
-
-const handleToggle = ({ id, checked }) => {
-  if (checked) {
-    
-    if (!selectedSubtopics.value.some((item) => item.id === id)) {
-      selectedSubtopics.value.push({ id, count: 10 });
-    }
-    
-  } else {
-    const index = selectedSubtopics.value.findIndex((subtopic) => subtopic.id === id); 
-    if (index !== -1) {
-      selectedSubtopics.value.splice(index, 1);
-    }
-  }
-};
-
-const handleUpdateCount = ({ id, newCount }) => {
-  const subtopic = selectedSubtopics.value.find((item) => item.id === id);
-  if (subtopic) {
-    subtopic.count = newCount; 
-  }
-};
-
-const router = useRouter()
+const router = useRouter();
 
 function startPractice() {
-
-  if(selectedSubtopics.value.length > 0){
-    router.push({ 
-      name: 'examples', 
-      query: { topics: JSON.stringify(selectedSubtopics.value) } 
+  if (selectedSubtopics.value.length > 0) {
+    router.push({
+      name: 'examples',
+      query: { 
+        topics: JSON.stringify(selectedSubtopics.value.map(subtopic => subtopic.id)),
+      }
     });
-  }else {
+  } else {
     noTopics.value = true;
-
     setTimeout(() => {
-      noTopics.value = false; 
+      noTopics.value = false;
     }, 2000);
   }
 }
+
+const updateExampleCount = ({ relatedSkills, isSelected }) => {
+  relatedSkills.forEach(({ related_id, examples }) => {
+    const subtopic = subtopics.value.find(sub => sub.id === related_id);
+    
+    if (subtopic) {
+      subtopic.examples += isSelected ? examples : -examples;
+    }
+  });
+};
+
 
 
 </script>
 
 <template>
+  <div class="flex flex-col items-center">
+    <h1 class="text-4xl font-bold text-primary my-8" v-if="topic">
+      {{ topic.name }}
+    </h1>
+    
 
-    <div class="flex flex-col items-center">
-      <h1 class="text-4xl font-bold text-primary my-8" v-if="topic">{{ topic.name }}</h1>
-      <p class="text-secondary text-xl">Vyberte, co vše chcete procvičit</p>
+    <Spinner v-if="loading" class="mt-24" />
 
-      <Spinner v-if="loading" class="mt-24"/>
+    <!-- Render operations as buttons using the new component -->
+    <p v-if="operations.length > 0" class="text-secondary text-xl mb-4">Vyber si operace, které chceš procvičit</p>
+    <div v-if="operations.length > 0" class="flex gap-4 mb-4">
+      <OperationButton 
+        v-for="operation in operations" 
+        :key="operation.id" 
+        :operation="operation"
+        :selectedSubtopics="selectedSubtopics"
+        @updateExampleCount="updateExampleCount"
 
-      <div class="flex my-8">
-        <SubTopic 
-          v-for="(subtopic, index) in subtopics" 
-          :key="index" 
-          :subtopic="subtopic" 
-          @toggle="handleToggle" 
-          @updateCount="handleUpdateCount" 
-          class="mr-8" 
-        />
-      </div>
-      <div @click="startPractice" 
-        class="cursor-pointer bg-tertiary px-6 py-3 rounded-2xl font-bold text-primary text-2xl">
-        Začít procvičovat
-      </div>
-
-      <transition name="fade">
-        <div 
-          v-if="noTopics" 
-          class="text-red-600 font-semibold text-xl mt-6">
-            Nebylo vybráno žádné cvičení
-        </div>
-      </transition>   
-
+      />
     </div>
+
+    <p v-if="subtopics.length > 0" class="text-secondary text-xl mt-8">Jaké příklady chceš procvičit? </p>
+    <div v-if="subtopics.length > 0" class="flex">
+      <SubTopic
+        v-for="subtopic in subtopics"
+        :key="subtopic.id"
+        :subtopic="subtopic"
+        :selectedSubtopics="selectedSubtopics"
+      />
+    </div>
+
+    <div @click="startPractice" class="mt-6 px-6 py-3 bg-secondary text-xl font-bold text-white rounded-lg cursor-pointer hover:bg-primary transition">
+      JDEME NA TO
+    </div>
+  </div>
 </template>
-
-<style scoped>
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.5s ease;
-}
-.fade-enter, .fade-leave-to {
-  opacity: 0;
-}
-
-</style>

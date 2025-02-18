@@ -1,8 +1,10 @@
 <script setup>
-import { ref, defineProps, defineEmits, nextTick } from 'vue';
+import { ref, defineProps, defineEmits, nextTick, onMounted } from 'vue';
 import ExampleCreator from './ExampleCreator.vue';
-import { postExamples } from '@/api/apiClient';
-import ToastManager from '@/components/Toast/ToastManager.vue';
+import { postTask } from '@/api/apiClient';
+import { useToastStore } from '@/stores/useToastStore';
+import { useTaskStore } from '@/stores/useTaskStore';
+import { useRouter } from 'vue-router';
 
 const props = defineProps({
   selectedSkills: {
@@ -31,16 +33,21 @@ const isImportOpen = ref(false);
 
 const taskJSON = ref();
 const task = ref();
+const taskId = ref();
 
 const validJSON = ref(false);
 
-const toastManager = ref(null);
+const toastStore = useToastStore();
+const taskStore = useTaskStore();
+const router = useRouter();
 
+const edit = ref(false);
+      
 const addExampleCreators = () => {
   exampleCount.value += 6;
 };
 
-const collectExamples = () => {
+const collectExamples = (action) => {
   examples.value = [];
 
   exampleCreators.value.forEach((creator) => {
@@ -49,8 +56,7 @@ const collectExamples = () => {
       if (data !== null) examples.value.push(data);
     }
   });
-
-  submitExamples();
+  submitExamples(action);
 };
 
 const clearExamples = () => {
@@ -61,15 +67,42 @@ const clearExamples = () => {
   });
 }
 
-const submitExamples = async () => {
+const submitExamples = async (action) => {
   try{
-    await postExamples(examples, props.selectedSkills, props.taskName);
-    toastManager.value.showToast('Sada byla vytvořena!', 'success');
+
+    if(props.selectedSkills.length === 0){
+      toastStore.addToast({
+        message: 'Nebyly vybrány žádné dovednosti',
+        type: 'error',
+        visible: true,
+      });
+      return;
+
+    } else if(props.taskName === ''){
+      toastStore.addToast({
+        message: 'Nebyl vyplněn název sady',
+        type: 'error',
+        visible: true,
+      });
+      return;
+    }
+    await postTask(examples, props.selectedSkills, props.taskName, taskId.value, action);
+    toastStore.addToast({
+        message: action == 'create' ? 'Sada byla vytvořena' : 'Změny byly uloženy',
+        type: 'success',
+        visible: true,
+    });
     emit('submit');
     clearExamples();
+    router.push('/tasks');
+
 
   }catch(error){
-    toastManager.value.showToast('Chyba', 'error');
+    toastStore.addToast({
+        message: action == 'create' ? 'Sadu se nepodařilo vytvořit' : 'Změny se nepodařilo uložit',
+        type: 'error',
+        visible: true,
+    });
   }
 };
 
@@ -83,7 +116,6 @@ const exportJSON = () => {
 
   task.value = { 'task_name': props.taskName, 'skill_ids': props.selectedSkills, 'examples': examples };
   taskJSON.value = JSON.stringify(task.value, null, 2);
-  console.log(taskJSON.value)
 
   isExportOpen.value = true;
 };
@@ -106,7 +138,7 @@ const importJSON = () => {
       exampleCreators.value.forEach((creator) => {
         const example = importedExamples[index];
         if (creator && example) {
-          creator.importExample(example.example, example.answer, example.steps);
+          creator.importExample(example.example, null, example.answer, example.steps);
           index++;
         }
       });
@@ -172,11 +204,51 @@ const handleJSON = (event) => {
     validJSON.value = false;
   }
 };
+
+const importTask = () => {
+
+  const task = taskStore.task;
+  taskId.value = task.task_id;
+  const skills = taskStore.skills;
+  
+    const importedExamples = task.examples;
+    const importedCount = importedExamples.length;
+
+    // Adjust exampleCount based on the imported examples
+    if (importedCount > exampleCount.value) {
+      exampleCount.value = importedCount;
+    }
+
+    // Import examples into ExampleCreator components
+    nextTick(() => {
+      let index = 0;
+      exampleCreators.value.forEach((creator) => {
+        const example = importedExamples[index];
+        if (creator && example) {
+          creator.importExample(example.example, example.example_id, example.answers[0].answer_text, example.steps);
+          index++;
+        }
+      });
+    });
+
+    // Import task name and skills
+    emit('importTask', task.task_name, skills);
+  
+};
+
+
+
+onMounted(() => {
+  if(taskStore.task){
+    edit.value = true;
+    importTask();
+    taskStore.setTask(null, []);
+  }
+});
 </script>
 
 <template>
   <div class="flex flex-col items-center">
-    <ToastManager ref="toastManager" />
     <div class="flex">
       <div @click="exportJSON" class="p-2 border-2 border-primary bg-primary text-white font-bold absolute right-4 top-32 rounded-md cursor-pointer">EXPORT</div>
       <div @click="toggleImportWindow" class="p-2  border-2 border-primary text-primary font-bold absolute right-28 top-32 rounded-md cursor-pointer">IMPORT</div>
@@ -195,7 +267,15 @@ const handleJSON = (event) => {
     </div>
 
     <div
-      @click="collectExamples"
+      v-if="edit"
+      @click="collectExamples('edit')"
+      class="p-4 my-6 flex justify-center items-center rounded-lg bg-secondary text-white font-black text-2xl cursor-pointer"
+    >
+      Uložit změny
+    </div>
+    <div
+      v-else
+      @click="collectExamples('create')"
       class="p-4 my-6 flex justify-center items-center rounded-lg bg-secondary text-white font-black text-2xl cursor-pointer"
     >
       Vytvořit cvičení

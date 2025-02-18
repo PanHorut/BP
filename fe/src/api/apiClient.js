@@ -4,7 +4,7 @@ import qs from 'qs';
 const apiClient = axios.create({
   baseURL: 'https://bp-production-37c0.up.railway.app/api/',//'http://localhost:8000/api/'
   headers: {
-    'Content-Type': 'application/json',
+    //'Content-Type': 'application/json',
   },
 });
 
@@ -66,30 +66,35 @@ export const skipExample = async (studentId, exampleId, date) => {
     }
 }
 
-export const postExamples = async (examples, selectedSkills, taskName) => {
+export const postTask = async (examples, selectedSkills, taskName, taskId, action) => {
+  try {
+      const payload = {
+          task_name: taskName,
+          task_id: taskId,
+          skill_ids: selectedSkills.map(skill => skill.id),
+          examples: examples.value.map(example => ({
+              example: example.example,
+              example_id: example.example_id,
+              answer: example.answer,
+              input_type: example.input_type,
+              steps: example.steps,
+          }))
+      };
 
-    try {
-      for (const example of examples.value) {
-        const response = await apiClient.post('add-example/', {
-          example: example.example, 
-          answer: example.answer,
-          input_type: example.input_type,         
-          skill_ids: selectedSkills.map(skill => skill.id), 
-          task_name: taskName
-        });
-        
-        console.log('Example added:', response.data);
-      }
-      
-      console.log('All examples added successfully!');
-    } catch (error) {
+      const response = await apiClient.post(`${action}-task/`, payload);
+
+      console.log('Examples added successfully:', response.data);
+  } catch (error) {
       if (error.response) {
-        console.error('Error adding example:', error.response.data);
+          console.error('Error adding examples:', error.response.data);
       } else {
-        console.error('Network or server error:', error.message);
+          console.error('Network or server error:', error.message);
       }
-    }
-  };
+  }
+};
+
+
+
 
 export const getParentSkills = async () => {
   try {
@@ -167,11 +172,11 @@ export const deleteTask = async (taskId) => {
   }
 };
 
-export const createSkill = async (name, parentSkillId = null) => {
+export const createSkill = async (name, parent_id = null) => {
   try {
     const response = await apiClient.post('create-skill/', {
       name,
-      parent_skill: parentSkillId, 
+      parent_skill: parent_id, 
     });
     return response.data; 
   } catch (error) {
@@ -179,6 +184,125 @@ export const createSkill = async (name, parentSkillId = null) => {
   }
 };
 
+export const getSkillTree = async () => {
+  try {
+    const response = await apiClient.get('skill-tree/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching skill tree:', error);
+  }
+};
 
+export const searchSkills = async (query) => {
+  try {
+    const response = await apiClient.get(`skills/search/?q=${query}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching search results:', error);
+  }
+}
+
+export const getLandingPageSkills = async () => {
+  try {
+    const response = await apiClient.get('landing-page-skills/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching landing page skills:', error);
+  }
+}
+
+export const getRelatedSkillsTree = async (skillId) => {
+  try {
+    const response = await apiClient.get(`skills/${skillId}/tree/related`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching related skills:', error);
+  }
+}
+
+export const getChildrenSkillsTree = async (skillId, withCounts) => {
+  try {
+    const response = await apiClient.get(`skills/${skillId}/tree/children`,{
+      params: {
+        with_counts: withCounts,
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching related skills:', error);
+  }
+}
+
+export const getOperationSkills = async (skillId) => {
+  try {
+    const response = await apiClient.get(`skills/${skillId}/operations`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching operation skills:', error);
+  }
+}
+
+export const registerStudent = async (username, passphrase) => {
+  try {
+    const response = await apiClient.post('/register/student', {
+      username,
+      passphrase
+    });
+    return response;
+  } catch (error) {
+
+    if (error.response && error.response.data) {
+      return { error: error.response.data.error };
+    }
+  }
+};
+
+export const loginStudent = async (username, passphrase) => {
+  try {
+    const response = await apiClient.post('/login/student', {
+      username,
+      passphrase
+    });
+    return response;
+  } catch (error) {
+
+    if (error.response && error.response.data) {
+      return { error: error.response.data.error };
+    }
+  }
+};
+
+export const loginAdmin = async (username, password) => {
+  try {
+    const response = await apiClient.post('/login/admin', {
+      username,
+      password
+    });
+    return response;
+  } catch (error) {
+
+    if (error.response && error.response.data) {
+      return { error: error.response.data.error };
+    }
+  }
+};
+
+export const checkAnswer = async (student_id, example_id, date, duration, student_answer, answer_type) => {
+  try {
+    const response = await apiClient.post('check-answer/', {
+      student_id,
+      example_id,
+      date,
+      duration,
+      student_answer,
+      answer_type
+    });
+
+    return response.data;
+
+  } catch (error) {
+    console.error('Error checking answer:', error);
+  }
+}
 
 export default apiClient;

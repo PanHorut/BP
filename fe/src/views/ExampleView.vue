@@ -22,9 +22,15 @@ const images = ref({});
 
 const loading = ref(true);
 
+const isSkipped = ref(false);     
+
 const mistakes = ref(0);
+
 const skipped = ref(0);
-const total = ref(0); 
+const noMistakes = ref(0);
+const oneMistake = ref(0);
+const twoMistakes = ref(0);
+const threeMistakes = ref(0);
 
 const showSummary = ref(false);
 
@@ -39,6 +45,24 @@ const preloadImages = () => {
   images.value.wrong = wrong;
 };
 
+const evaluateMistakes = () => {
+
+  if(isSkipped.value){
+    skipped.value++;
+  }else if(mistakes.value === 0){
+    noMistakes.value++;
+  }else if(mistakes.value === 1){
+    oneMistake.value++;
+  }else if(mistakes.value === 2){
+    twoMistakes.value++;
+  }else if(mistakes.value === 3){
+    threeMistakes.value++;
+  }
+
+  mistakes.value = 0;
+  isSkipped.value = false;
+};
+
 
 const displayNext = async (data) => {
   
@@ -46,7 +70,7 @@ const displayNext = async (data) => {
   if (curr_index.value >= 0 && curr_index.value < examples.value.length) {
     
     if (data.skipped) {
-      skipped.value++;
+      isSkipped.value = true;
     } 
     else if (data.isCorrect) {
       displayIcon(true);
@@ -56,18 +80,20 @@ const displayNext = async (data) => {
       mistakes.value++;
     } 
     else {
-      mistakes.value++;
       displayIcon(false);
+      mistakes.value++;
       return;
     }
+    evaluateMistakes();
 
     curr_index.value++;
+
     await nextTick();
 
     if (curr_index.value === examples.value.length) {
-      total.value = examples.value.length - skipped.value;  
       showSummary.value = true;
     }
+
     
   }else {
     console.error("index is out of bounds:", curr_index.value);
@@ -78,7 +104,6 @@ const fetchExamples = async (topics) => {
   
   try {
     examples.value = await getExamples(topics);
-    total.value = examples.value.length;
   } catch (error) {
     console.error("Failed to fetch examples:", error);
   } finally {
@@ -105,7 +130,6 @@ const displayIcon = async (correct) => {
 };
 
 const displaySummary = () => {
-  total.value = curr_index.value-1;
   showSummary.value = true;
 };
 
@@ -115,6 +139,7 @@ onMounted(() => {
 
   if (route.query.topics) {
       topics.value = JSON.parse(route.query.topics);
+      console.log(topics.value);
       fetchExamples(topics.value);
   }
 });
@@ -132,8 +157,11 @@ onMounted(() => {
       <Example v-if="examples.length > curr_index && !showSummary" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
       <img v-if="examples.length > curr_index"   :src="isCorrect ? images.correct.src : images.wrong.src" 
       class="w-48 h-48 absolute t-50" :class="showIcon ? '' : 'hidden'" >
-      
-      <Summary v-if="showSummary" :total="total" :skipped="skipped" :mistakes="mistakes"></Summary>
+
+      <div v-if="mistakes.value > 0">
+        <p v-if="examples[curr_index].steps">{{ examples[curr_index].steps[mistakes-1] }}</p>
+      </div>
+      <Summary v-if="showSummary" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes"></Summary>
     </div>
 
     

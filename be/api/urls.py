@@ -1,8 +1,11 @@
 from django.urls import path
-from . import views  # Import `views` module
+from rest_framework_simplejwt.views import TokenRefreshView
+from . import views 
 
 urlpatterns = [
-    path('add-example/', views.addExample, name='add-example'),
+    path('create-task/', views.create_task, name='create-task'),
+    path('edit-task/', views.edit_task, name='edit-task'),
+
     path('skills/', views.SkillList.as_view(), name='skill-list'),
     path('get-all-skills/', views.get_all_skills, name='get-all-skills'),
     path('examples-skills/', views.ExampleSkillList.as_view(), name='example-skill-list'),
@@ -21,7 +24,26 @@ urlpatterns = [
     path('example/<int:example_id>/delete/', views.delete_example, name='delete_example'),
     path('tasks/<int:task_id>/delete/', views.delete_task, name='delete_task'),
     path('create-skill/', views.create_skill, name='create_skill'),
+    path('skill-tree/', views.get_skill_tree, name='get-skill-tree'),
+    path('skills/search/', views.search_skills, name='skill-search'),
+    path('landing-page-skills/', views.get_landing_page_skills, name='get-landing-page-skills'),
+    path('skills/<int:skill_id>/tree/related', views.get_related_skills_tree, name='related_skills_tree'),
+    path('skills/<int:skill_id>/tree/children', views.get_children_skills_tree, name='children_skills_tree'),
+    path('skills/<int:skill_id>/operations', views.get_operation_skills, name='operation_skills'),
+
+    path('register/student', views.register_student, name='register_student'),
+    path('login/student', views.login_student, name='login_student'),
+    path('login/admin', views.login_admin, name='login_admin'),
+
+    path('check-answer/', views.check_answer, name='check-answer'),
+
+    path('transcribe-chunk/', views.transcribe_audio, name='transcribe_audio_chunk'),
+
+]
 
 
+from . import consumers
 
+websocket_urlpatterns = [
+    path('ws/audio/', consumers.AudioTranscriptionConsumer.as_asgi()),
 ]

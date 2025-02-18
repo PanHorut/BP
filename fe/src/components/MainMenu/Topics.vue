@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted } from 'vue';
-import { useTopicStore } from '@/stores/mainpageTopicStore';
+import { useTopicStore } from '@/stores/useMainpageTopicStore';
 import TopicCard from '@/components/MainMenu/TopicCard.vue';
 import Spinner from '../Spinner.vue';
 

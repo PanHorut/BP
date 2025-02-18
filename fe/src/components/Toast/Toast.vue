@@ -33,7 +33,7 @@ watch(
 <template>
   <div
     v-if="visible"
-    class="fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 z-50"
+    class="fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 z-50"
     :class="{
       'bg-green-500 text-white': type === 'success',
       'bg-red-500 text-white': type === 'error',
@@ -45,3 +45,4 @@ watch(
     <p class="text-xl">{{ message }}</p> <!-- Increased font size -->
   </div>
 </template>
+
