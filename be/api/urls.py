@@ -37,13 +37,14 @@ urlpatterns = [
 
     path('check-answer/', views.check_answer, name='check-answer'),
 
-    path('transcribe-chunk/', views.transcribe_audio, name='transcribe_audio_chunk'),
+    #path('transcribe-chunk/', views.transcribe_audio, name='transcribe_audio_chunk'),
 
 ]
 
-
+"""
 from . import consumers
 
 websocket_urlpatterns = [
     path('ws/audio/', consumers.AudioTranscriptionConsumer.as_asgi()),
 ]
+"""
