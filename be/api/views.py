@@ -768,19 +768,9 @@ def check_answer(request):
     
     return Response({'isCorrect': isCorrect, 'continue_with_next': continue_with_next}, status=status.HTTP_200_OK)    
 
-from openai import OpenAI
-from io import BytesIO
-from be.settings import OPENAI_API_KEY, BASE_DIR
-import os
 
 
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-# Set up logging to print errors or any unexpected results
-
-import logging
-logger = logging.getLogger(__name__)
-
+""""
 @api_view(['POST'])
 def transcribe_audio(request):
     if request.method == 'POST' and request.FILES.get('audio_chunk'):
@@ -808,7 +798,7 @@ def transcribe_audio(request):
     else:
         return JsonResponse({'error': 'No audio file received'}, status=400)
 
-"""
+
 @api_view(['POST'])
 def transcribe_audio(request):
     if request.method == 'POST' and request.FILES.get('audio_chunk'):
