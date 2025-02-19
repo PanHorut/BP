@@ -305,4 +305,23 @@ export const checkAnswer = async (student_id, example_id, date, duration, studen
   }
 }
 
+export const getChartData = async (studentId, dataType) => {
+  try {
+    const response = await apiClient.get(`chart-data/${dataType}/?student_id=${studentId}`);
+    const data = response.data;
+
+    return {
+      categories: data.map(item => item.date), // X-axis: Dates
+      series: [{ 
+        name: dataType === "duration" ? "Average Duration" : "Counted Examples",
+        data: data.map(item => dataType === "duration" ? item.avg_duration : item.example_count) // Y-axis
+      }]
+    };
+  } catch (error) {
+    console.error(`Error fetching ${dataType} data:`, error);
+    return { categories: [], series: [] };
+  }
+};
+
+
 export default apiClient;

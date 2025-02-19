@@ -37,6 +37,11 @@ urlpatterns = [
 
     path('check-answer/', views.check_answer, name='check-answer'),
 
+    path('chart-data/duration/', views.average_duration, name='average-duration'),   
+    path('chart-data/examples/', views.counted_examples, name='counted-examples'),   
+
+
+
     #path('transcribe-chunk/', views.transcribe_audio, name='transcribe_audio_chunk'),
 
 ]

@@ -769,6 +769,94 @@ def check_answer(request):
     return Response({'isCorrect': isCorrect, 'continue_with_next': continue_with_next}, status=status.HTTP_200_OK)    
 
 
+from django.db.models import Sum
+from django.db.models.functions import TruncMinute
+
+@api_view(['GET'])
+def attempts_over_time(request):
+    try:
+        # Get student_id from query params (adjust as needed)
+        student_id = request.query_params.get('student_id')
+        
+        if not student_id:
+            return Response({"error": "Missing student_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Aggregate attempts per minute (or change to hour/day)
+        data = (
+            StudentExample.objects
+            .filter(student_id=student_id)
+            .annotate(time_group=TruncMinute('date'))
+            .values('time_group')
+            .annotate(total_attempts=Sum('attempts'))
+            .order_by('time_group')
+        )
+
+        # Format data for ApexCharts
+        response_data = {
+            'categories': [item['time_group'].strftime('%H:%M') for item in data],
+            'series': [
+                {
+                    'name': 'Attempts',
+                    'data': [item['total_attempts'] for item in data]
+                }
+            ]
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+from django.db.models import Avg, Count
+
+@api_view(['GET'])
+def average_duration(request):
+    student_id = request.GET.get('student_id', 1)  # Default to student 1 if not provided
+
+    # Aggregate data: Group by date and calculate the average duration
+    data = (
+        StudentExample.objects
+        .filter(student_id=student_id)
+        .values('date__date')  # Group by date only (without time)
+        .annotate(avg_duration=Avg('duration'))  # Calculate average
+        .order_by('date__date')  # Sort by date
+    )
+
+    # Convert queryset to list of dictionaries
+    result = [
+        {"date": item["date__date"].strftime("%Y-%m-%d"), "avg_duration": round(item["avg_duration"], 2)}
+        for item in data
+    ]
+
+    return JsonResponse(result, safe=False)
+
+from django.utils.timezone import make_aware
+from datetime import datetime, timedelta
+
+@api_view(['GET'])
+def counted_examples(request):
+    student_id = request.GET.get('student_id')
+    if not student_id:
+        return JsonResponse({"error": "Missing student_id"}, status=400)
+
+    # Get the date range (from 20.2 to 28.2)
+    start_date = make_aware(datetime(2025, 2, 20))
+    end_date = make_aware(datetime(2025, 2, 28))
+
+    # Query counted examples per day
+    data = (
+        StudentExample.objects.filter(student_id=student_id, date__date__range=[start_date, end_date])
+        .values('date__date')  # Group by day only (ignore time)
+        .annotate(example_count=Count('id'))
+        .order_by('date__date')
+    )
+
+    # Format response
+    response_data = [
+        {"date": entry["date__date"].strftime("%Y-%m-%d"), "example_count": entry["example_count"]}
+        for entry in data
+    ]
+
+    return JsonResponse(response_data, safe=False)
 
 """"
 @api_view(['POST'])

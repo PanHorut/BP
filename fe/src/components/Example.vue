@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, defineEmits, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, defineEmits, defineExpose, computed, watch } from 'vue';
 import InlineInput from '@/components/Input Fields/InlineInput.vue';
 import FractionInput from './Input Fields/FractionInput.vue';
 import VariableInput from './Input Fields/VariableInput.vue';
@@ -173,6 +173,18 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleEnter);
 });
+
+const step = ref('');
+
+const getStep = (mistakes) => {
+  if (props.example && props.example.steps) {
+    step.value = props.example.steps[mistakes - 1]?.text ?? step.value;
+  }
+  return null;
+};
+
+defineExpose({getStep});
+
 </script>
 
 <template>
@@ -183,7 +195,7 @@ onUnmounted(() => {
         UKONČIT
     </div>
     </div>
-  <div class="flex items-center justify-center mt-40">
+  <div class="flex items-center justify-center mt-20">
     
     <div class="flex flex-col">
       <div class="text-8xl">
@@ -197,6 +209,9 @@ onUnmounted(() => {
           <FractionInput v-else-if="props.example.input_type == 'FRAC'" ref="fractionInput" @answerSent="checkFraction"></FractionInput>
           <SetInput v-else-if="props.example.input_type == 'SET'" ref="setInput" :answer="props.answer" @answerSent="checkSet"></SetInput>      
           <InlineInput v-else-if="props.example.input_type == 'INLINE'" ref="inlineInput" @answerSent="checkInline"></InlineInput>
+      </div>
+      <div v-if="step" class="mt-8">
+        <p class="text-4xl text-center text-gray-600">Nápověda: <span class="font-semibold text-black">{{ step }}</span></p>
       </div>
     </div>
     </div>

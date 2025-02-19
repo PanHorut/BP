@@ -11,6 +11,7 @@ import Spinner from '@/components/Spinner.vue';
 import Summary from '@/components/Example/Summary.vue';
 
 const examples = ref([]); 
+const exampleComponent = ref(null);  
 const curr_index = ref(0); 
 const route = useRoute();
 const topics = ref([]);
@@ -82,6 +83,7 @@ const displayNext = async (data) => {
     else {
       displayIcon(false);
       mistakes.value++;
+      exampleComponent.value.getStep(mistakes.value)
       return;
     }
     evaluateMistakes();
@@ -134,6 +136,7 @@ const displaySummary = () => {
 };
 
 
+
 onMounted(() => {
   preloadImages();
 
@@ -152,16 +155,14 @@ onMounted(() => {
       <Spinner v-if="loading" class="mt-48"/>
     </div>
     <div class="flex items-center justify-center">
-      
-      
-      <Example v-if="examples.length > curr_index && !showSummary" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
+             
+      <Example ref="exampleComponent" v-if="examples.length > curr_index && !showSummary" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
       <img v-if="examples.length > curr_index"   :src="isCorrect ? images.correct.src : images.wrong.src" 
       class="w-48 h-48 absolute t-50" :class="showIcon ? '' : 'hidden'" >
 
-      <div v-if="mistakes.value > 0">
-        <p v-if="examples[curr_index].steps">{{ examples[curr_index].steps[mistakes-1] }}</p>
-      </div>
+      
       <Summary v-if="showSummary" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes"></Summary>
+      
     </div>
 
     

@@ -3,34 +3,78 @@ import Signup from '@/components/Profile/Signup.vue';
 import Login from '@/components/Profile/Login.vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { RouterLink } from 'vue-router';
-import {ref} from 'vue';
+import { ref, reactive, onMounted } from 'vue';
+import { getChartData } from '@/api/apiClient';
 
 const authStore = useAuthStore();
 const showLogin = ref(true);
 
 const toggleLogin = () => {
   showLogin.value = !showLogin.value;
-}   
+};
 
+// Chart options with dual Y-axes
+const chartOptions = reactive({
+  chart: {
+    id: 'performance-over-time',
+    toolbar: { show: true }
+  },
+  xaxis: {
+    categories: []
+  },
+  dataLabels: { enabled: false },
+  colors: ['#008FFB', '#FF4560'], // Blue for duration, Red for counted examples
+  stroke: { curve: 'smooth' },
+  yaxis: [
+    {
+      title: { text: 'Avg Duration (ms)' },
+      opposite: false // Left Y-axis
+    },
+    {
+      title: { text: 'Counted Examples' },
+      opposite: true // Right Y-axis
+    }
+  ]
+});
 
+const chartSeries = ref([]);
 
+const fetchData = async () => {
+  try {
+    const studentId = 1; // Replace with dynamic value if needed
+    const avgDurationData = await getChartData(studentId, "duration");
+    const countedExamplesData = await getChartData(studentId, "examples");
+
+    chartOptions.xaxis.categories = avgDurationData.categories; // Assuming both datasets share the same dates
+    chartSeries.value = [
+      { name: "Average Duration", data: avgDurationData.series[0].data, type: "line", yAxisIndex: 0 },
+      { name: "Counted Examples", data: countedExamplesData.series[0].data, type: "line", yAxisIndex: 1 }
+    ];
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+};
+
+//onMounted(fetchData);
 </script>
 
 <template>
-    <div v-if="authStore.isAuthenticated" class="w-full text-4xl text-primary flex flex-col items-center justify-center font-bold pt-12">
-        <p>Ahoj {{ authStore.name }}!</p>
-        <p class="mt-12 text-3xl text-secondary font-semibold">Na této stránce brzy uvidíš statistiky o tom, jak počítáš :-)</p>
-
+  <div v-if="authStore.isAuthenticated" class="w-full text-4xl text-primary flex flex-col items-center justify-center font-bold pt-12">
+    <p>Ahoj {{ authStore.name }}!</p>
+    <div>
+      <!--<apexchart type="line" height="350" :options="chartOptions" :series="chartSeries"></apexchart>-->
     </div>
-    
-    <div v-else>
-        <Login v-if="showLogin"/>
-        <Signup v-else/>
+  </div>
 
-        <button @click="toggleLogin" class="underline w-full text-secondary text-lg">{{ showLogin ? "Ještě nemám účet - registrovat se" : "Už mám účet - přihlásit se" }}</button>
-        <RouterLink to="/admin" class="underline w-full text-secondary text-lg mt-12 flex justify-center">Jsem administrátor aplikace</RouterLink>
-    </div>
+  <div v-else>
+    <Login v-if="showLogin" />
+    <Signup v-else />
 
-
+    <button @click="toggleLogin" class="underline w-full text-secondary text-lg">
+      {{ showLogin ? "Ještě nemám účet - registrovat se" : "Už mám účet - přihlásit se" }}
+    </button>
+    <RouterLink to="/admin" class="underline w-full text-secondary text-lg mt-12 flex justify-center">
+      Jsem administrátor aplikace
+    </RouterLink>
+  </div>
 </template>
-  
