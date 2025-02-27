@@ -10,28 +10,27 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set up the working directory
+# Set the working directory (inside `/app`)
 WORKDIR /app
 
-# Copy the requirements file
-COPY requirements.txt .
+# Copy only the requirements file first to leverage Docker cache
+COPY requirements.txt /app/
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
-COPY . .
+# Now copy the rest of the application
+COPY manage.py docker-entrypoint.sh /app/
+COPY be /app/be
+COPY api /app/api
+COPY static /app/static
+COPY staticfiles /app/staticfiles
 
-# Expose the necessary port (e.g., 8000 for Django)
+# Expose the necessary port (8000 for Django)
 EXPOSE 8000
 
-# Copy the entrypoint script and ensure it’s executable
-COPY docker-entrypoint.sh /app/
+# Make sure entrypoint script is executable
 RUN chmod +x /app/docker-entrypoint.sh
 
-# Use the entrypoint script to handle migrations and then start the app
+# Use the entrypoint script to handle migrations and start the app
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-
-
-# Use Gunicorn to run the Django application
-#CMD ["gunicorn", "be.wsgi:application", "--bind", "0.0.0.0:8000"]

@@ -1,81 +1,125 @@
-# consumers.py
-import json
+import asyncio
+import azure.cognitiveservices.speech as speechsdk
 from channels.generic.websocket import AsyncWebsocketConsumer
-from openai import OpenAI
-#from be.settings import OPENAI_API_KEY
-from pydub import AudioSegment
+from be.settings import AZURE_API_KEY, AZURE_REGION
 
-import io
-import ffmpeg
-import tempfile
+from datetime import datetime
 import os
+from concurrent.futures import ThreadPoolExecutor
+import json
 
-
-
-
-class AudioTranscriptionConsumer(AsyncWebsocketConsumer):
+class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Accept WebSocket connection
-        self.room_name = "audio_transcription"
-        self.room_group_name = f"audio_{self.room_name}"
+        self.speech_data = b""
+        self.message_queue = asyncio.Queue()
+        self.loop = asyncio.get_event_loop()
+        self.executor = ThreadPoolExecutor(max_workers=1)
 
+        self.metadata = {}
+
+        
+        # Create the Azure speech recognizer and audio stream
+        self.speech_recognizer, self.stream = self.create_speech_recognizer()
+        
+        # Accept the WebSocket connection
         await self.accept()
-
-    async def receive(self, bytes_data):
-        # If the message is binary (audio data), process it
-        if isinstance(bytes_data, bytes):
-            audio_data = bytes_data
-
-            # Transcribe audio data
-            self.transcribe_audio(audio_data)
-
-    async def transcribe_audio(self, audio_data):
-        try:
-
-             # Save accumulated audio to a temporary file
-            with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as temp_audio_file:
-                temp_audio_file.write(audio_data)
-                temp_audio_file_path = temp_audio_file.name
-            """
-            client = OpenAI(api_key=OPENAI_API_KEY)
-            with open(temp_audio_file.name, 'rb') as f:
-                    response = client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=f,  
-                        language="cs"
-                )
-            print(response.text)  
-            """  
-            
-            # Convert the temporary file to a format readable by pydub
-
-            # Clean up the temporary file
-            os.remove(temp_audio_file_path)
-            """
-            audio = AudioSegment.from_file(io.BytesIO(audio_data), format="webm")
-            client = OpenAI(api_key=OPENAI_API_KEY)
-
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_wav_file:
-            # Export audio to the temporary file in WAV format
-                audio.export(temp_wav_file, format="wav")
-                temp_wav_file.close()  # Close the file so it can be used by OpenAI API
-
-                #print(f"Converted audio to WAV, saved at {temp_wav_file.name}")
-                # OpenAI API call using the temporary WAV file
-                print("Transcribing audio...")          
-                with open(temp_wav_file.name, 'rb') as f:
-                    response = client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=f,  # Send the actual file object to OpenAI API
-                        language="cs"
-                )
-            """
-
-            #print(response.text)
-        except Exception as e:
-            print(f"Error transcribing audio: {e}")
-            return "Error during transcription."
-
+        
+        # Start receiving audio and sending recognition results
+        asyncio.create_task(self.receive_audio())
+    
     async def disconnect(self, close_code):
-        # Handle disconnection if needed
-        pass
+        self.stream.close()
+        self.speech_recognizer.stop_continuous_recognition()
+        self.executor.shutdown(wait=False)
+        print("Speech recognition stopped.")
+    
+    async def receive(self, text_data=None, bytes_data=None):
+        if text_data:
+            # Handle metadata (e.g., student_id, example_id, etc.)
+            try:
+                new_metadata = json.loads(text_data)
+                # Update metadata dynamically
+                self.metadata.update(new_metadata)
+            except json.JSONDecodeError:
+                print("Invalid metadata received.")
+                
+        elif bytes_data:
+            # Write the audio data to the stream
+            self.stream.write(bytes_data)
+    
+    async def receive_audio(self):
+        while True:
+            await asyncio.sleep(0.1)
+    
+    
+    
+    def create_speech_recognizer(self):
+        speech_config = speechsdk.SpeechConfig(subscription=AZURE_API_KEY, region=AZURE_REGION)
+        format = speechsdk.audio.AudioStreamFormat(compressed_stream_format=speechsdk.AudioStreamContainerFormat.ANY)
+        stream = speechsdk.audio.PushAudioInputStream(format)
+        audio_config = speechsdk.audio.AudioConfig(stream=stream)
+        
+        speech_recognizer = speechsdk.SpeechRecognizer(
+            speech_config=speech_config,
+            audio_config=audio_config,
+            language="cs-CZ"
+        )
+        
+        def recognized_cb(evt: speechsdk.SpeechRecognitionEventArgs):
+            try:
+                if evt.result.text:
+                    #print(f"Recognized: {evt.result.text}")
+                    future = asyncio.run_coroutine_threadsafe(
+                        self.message_queue.put(evt.result.text),
+                        self.loop
+                    )
+                    future.result()  # Wait for the result to ensure it's processed
+
+                    from .utils import calculate_duration
+                    from .answerChecker import InlineSpeechAnswerChecker
+
+                    student_id = self.metadata.get('student_id')
+                    example_id = self.metadata.get('example_id')
+                    record_date = self.metadata.get('record_date')
+                    duration = calculate_duration(record_date)
+                    student_answer = evt.result.text
+
+                    isCorrect, continue_with_next = InlineSpeechAnswerChecker.verifyAnswer(student_id, example_id, record_date, duration, student_answer)
+
+                    response_data = {
+                        "isCorrect": isCorrect,
+                        "continue_with_next": continue_with_next
+                    }
+
+                    asyncio.run_coroutine_threadsafe(
+                        self.send(json.dumps(response_data)),
+                        self.loop
+                    )
+                    
+
+            except Exception as e:
+                print(f"Error in recognized callback: {e}")
+
+        def recognizing_cb(evt: speechsdk.SpeechRecognitionEventArgs):
+            try:
+                if evt.result.text:
+                    #print(f"Recognizing: {evt.result.text}")
+                    future = asyncio.run_coroutine_threadsafe(
+                        self.message_queue.put(f"[interim] {evt.result.text}"),
+                        self.loop
+                    )
+                    future.result()  # Wait for the result to ensure it's processed
+            except Exception as e:
+                print(f"Error in recognizing callback: {e}")
+
+        speech_recognizer.recognized.connect(recognized_cb)
+        speech_recognizer.recognizing.connect(recognizing_cb)
+        
+        # Start recognition in a separate thread to avoid blocking
+        def start_recognition():
+            speech_recognizer.start_continuous_recognition()
+        
+            
+        self.executor.submit(start_recognition)
+        
+        return speech_recognizer, stream

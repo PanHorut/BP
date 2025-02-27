@@ -1,5 +1,7 @@
 from .models import Skill, ExampleSkill
 from collections import defaultdict
+from datetime import datetime, timezone
+
 
 
 # gets the height of a node in a tree of skills
@@ -128,3 +130,26 @@ def merge_unique_lists(input_lists):
                 result.append(input_lists[i] + input_lists[j])
 
     return result
+
+
+def calculate_duration(record_date_str):
+   
+    if not record_date_str:
+        return 0  
+
+    try:
+        record_date = datetime.strptime(record_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+        record_date = record_date.replace(tzinfo=timezone.utc)
+
+        current_time = datetime.now(timezone.utc)
+
+        return int((current_time - record_date).total_seconds() * 1000)
+    except ValueError as e:
+        print(f"Error parsing record_date: {e}")
+        return 0  
+
+
+
+
+

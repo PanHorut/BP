@@ -9,6 +9,7 @@ import correctIcon from '@/assets/img/correct.png';
 import wrongIcon from '@/assets/img/wrong.png'
 import Spinner from '@/components/Spinner.vue';
 import Summary from '@/components/Example/Summary.vue';
+import { useRecorderStore } from '@/stores/useRecorderStore';
 
 const examples = ref([]); 
 const exampleComponent = ref(null);  
@@ -34,6 +35,8 @@ const twoMistakes = ref(0);
 const threeMistakes = ref(0);
 
 const showSummary = ref(false);
+
+const recorderStore = useRecorderStore();
 
 const preloadImages = () => {
   const correct = new Image();
@@ -93,6 +96,7 @@ const displayNext = async (data) => {
     await nextTick();
 
     if (curr_index.value === examples.value.length) {
+      recorderStore.stopRecording();  
       showSummary.value = true;
     }
 
@@ -132,10 +136,9 @@ const displayIcon = async (correct) => {
 };
 
 const displaySummary = () => {
+  recorderStore.stopRecording();
   showSummary.value = true;
 };
-
-
 
 onMounted(() => {
   preloadImages();
@@ -149,7 +152,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <SpecialCharsBar v-if="examples.length > curr_index && !showSummary"></SpecialCharsBar>
+    <!--<SpecialCharsBar v-if="examples.length > curr_index && !showSummary"></SpecialCharsBar>-->
     <div v-if="examples.length > curr_index && !showSummary" class="flex-col items-center justify-center">
       <ProgressBar :totalExamples="examples.length" :finishedExamples="curr_index"></ProgressBar>
       <Spinner v-if="loading" class="mt-48"/>

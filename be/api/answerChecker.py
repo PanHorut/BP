@@ -117,3 +117,36 @@ class VariableAnswerChecker(AnswerChecker):
         continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
         return (True, continue_with_next)
             
+class InlineSpeechAnswerChecker(AnswerChecker):
+    pass
+
+    @staticmethod
+    def verifyAnswer(student_id, example_id, date, duration, student_answer):   
+        correct_answer = Answer.objects.get(example_id=example_id).answer
+
+        # Convert correct answer to float
+        try:
+            correct_answer = float(correct_answer.replace(",", "."))
+        except ValueError:
+            print("Invalid correct answer format.")
+            return (False, False)
+
+        # Normalize student's answer (replace ',' with '.' for decimal numbers)
+        student_answer = student_answer.replace(",", ".")
+
+        # Extract all numbers (integers and decimals) from student's answer
+        numbers_in_answer = re.findall(r'\d+\.\d+|\d+', student_answer)
+        
+        # Convert extracted numbers to floats
+        extracted_numbers = [float(num) for num in numbers_in_answer]
+
+        print(f"Extracted Numbers: {extracted_numbers}, Correct Answer: {correct_answer}")
+
+        # Check if any extracted number matches the correct answer
+        is_correct = any(AnswerChecker.compareAnswers(num, correct_answer) for num in extracted_numbers)
+
+        # Update the record based on whether the answer is correct
+        continue_with_next = InlineSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, is_correct)
+
+        return (is_correct, continue_with_next)
+    

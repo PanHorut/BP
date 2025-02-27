@@ -1,17 +1,15 @@
 <script setup>
-import { ref, onMounted, onUnmounted, defineEmits, defineExpose, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, defineEmits, defineExpose, computed, watch, nextTick } from 'vue';
 import InlineInput from '@/components/Input Fields/InlineInput.vue';
 import FractionInput from './Input Fields/FractionInput.vue';
 import VariableInput from './Input Fields/VariableInput.vue';
 import SetInput from './Input Fields/SetInput.vue';
 import Timer from '@/components/Example/Timer.vue';
+import SpeechRecorder from '@/components/Example/SpeechRecorder.vue';
 import { updateRecord, createRecord, skipExample, deleteRecord, checkAnswer } from '@/api/apiClient';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/useAuthStore';
-
-
-
-
+import { useRecorderStore } from '@/stores/useRecorderStore';
 
 const props = defineProps({
   example: {
@@ -33,6 +31,8 @@ const record_date = ref('');
 const router = useRouter();
 const authStore = useAuthStore(); 
 const student_id = authStore.id || 1;
+const speechRecorder = ref(null);
+const recorderStore = useRecorderStore(); 
 
 const checkInline = async (answer) => {
 
@@ -91,6 +91,10 @@ const checkSet = async (variables) => {
 const initRecord = async () => {
   const result = await createRecord(student_id , props.example.id);
   record_date.value = result.date;
+
+  if (speechRecorder.value) {
+      speechRecorder.value.updateExampleData(student_id, props.example.id, record_date.value);
+  }
   
 }
 
@@ -113,6 +117,7 @@ watch(
   },
   { immediate: true }
 );
+
 
 
 function renderMathJax() {
@@ -166,7 +171,9 @@ onMounted(() => {
   window.addEventListener('keydown', handleEnter);
   renderMathJax();
   timer.value.startTimer();
-  
+
+  recorderStore.setEmitFunction(emits);
+
 });
 
 // Clean up event listeners on unmount
@@ -199,16 +206,19 @@ defineExpose({getStep});
     
     <div class="flex flex-col">
       <div class="text-8xl">
-        
-        <div class="flex w-32 items-center">
-          {{ renderedExample }}
-        </div>
+       
+          <div class="flex w-32 items-center">
+            {{ renderedExample }}
+          </div>
+          
         <div class="flex mt-10 items-center">
         <p v-if="props.example.input_type == 'INLINE' || props.example.input_type == 'FRAC'" class="mr-2">=</p>
           <VariableInput v-if="props.example.input_type == 'VAR'" ref="variableInput" :answer="props.answer" @answerSent="checkVariables"></VariableInput>
           <FractionInput v-else-if="props.example.input_type == 'FRAC'" ref="fractionInput" @answerSent="checkFraction"></FractionInput>
           <SetInput v-else-if="props.example.input_type == 'SET'" ref="setInput" :answer="props.answer" @answerSent="checkSet"></SetInput>      
           <InlineInput v-else-if="props.example.input_type == 'INLINE'" ref="inlineInput" @answerSent="checkInline"></InlineInput>
+          <SpeechRecorder ref="speechRecorder" class="ml-8"></SpeechRecorder>
+
       </div>
       <div v-if="step" class="mt-8">
         <p class="text-4xl text-center text-gray-600">Nápověda: <span class="font-semibold text-black">{{ step }}</span></p>

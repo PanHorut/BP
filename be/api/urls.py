@@ -1,6 +1,6 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
 from . import views 
+from .consumers import SpeechRecognitionConsumer
 
 urlpatterns = [
     path('create-task/', views.create_task, name='create-task'),
@@ -46,10 +46,6 @@ urlpatterns = [
 
 ]
 
-"""
-from . import consumers
-
 websocket_urlpatterns = [
-    path('ws/audio/', consumers.AudioTranscriptionConsumer.as_asgi()),
+    path('ws/speech/', SpeechRecognitionConsumer.as_asgi()),
 ]
-"""

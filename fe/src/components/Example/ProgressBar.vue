@@ -18,7 +18,7 @@ const progress = computed(() => {
 </script>
 
 <template>
-    <div class="w-full max-w-md mx-auto mt-10">
+    <div class="w-full max-w-md mx-auto pt-10">
       <!-- Progress Bar Container -->
       <div class="bg-gray-200 rounded-full h-6">
         <div

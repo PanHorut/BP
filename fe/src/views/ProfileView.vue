@@ -17,7 +17,7 @@ const toggleLogin = () => {
 const chartOptions = reactive({
   chart: {
     id: 'performance-over-time',
-    toolbar: { show: true }
+    toolbar: { show: false }
   },
   xaxis: {
     categories: []
@@ -27,11 +27,11 @@ const chartOptions = reactive({
   stroke: { curve: 'smooth' },
   yaxis: [
     {
-      title: { text: 'Avg Duration (ms)' },
+      title: { text: 'Průměrný čas počítání příkladu (ms)' },
       opposite: false // Left Y-axis
     },
     {
-      title: { text: 'Counted Examples' },
+      title: { text: 'Spočítaných příkladů za den' },
       opposite: true // Right Y-axis
     }
   ]
@@ -47,22 +47,23 @@ const fetchData = async () => {
 
     chartOptions.xaxis.categories = avgDurationData.categories; // Assuming both datasets share the same dates
     chartSeries.value = [
-      { name: "Average Duration", data: avgDurationData.series[0].data, type: "line", yAxisIndex: 0 },
-      { name: "Counted Examples", data: countedExamplesData.series[0].data, type: "line", yAxisIndex: 1 }
+      { name: "Průměrný čas počítání", data: avgDurationData.series[0].data, type: "line", yAxisIndex: 0 },
+      { name: "Spočítaných příkladů", data: countedExamplesData.series[0].data, type: "line", yAxisIndex: 1 }
     ];
   } catch (error) {
     console.error('Error fetching data:', error);
   }
 };
 
-//onMounted(fetchData);
+onMounted(fetchData);
 </script>
 
 <template>
   <div v-if="authStore.isAuthenticated" class="w-full text-4xl text-primary flex flex-col items-center justify-center font-bold pt-12">
     <p>Ahoj {{ authStore.name }}!</p>
-    <div>
-      <!--<apexchart type="line" height="350" :options="chartOptions" :series="chartSeries"></apexchart>-->
+    <div class="w-full max-w-5xl px-4"> 
+      <!-- Increased width with max-w-5xl (80rem) -->
+      <apexchart type="line" height="400" :options="chartOptions" :series="chartSeries"></apexchart>
     </div>
   </div>
 
@@ -78,3 +79,4 @@ const fetchData = async () => {
     </RouterLink>
   </div>
 </template>
+

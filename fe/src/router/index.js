@@ -8,7 +8,6 @@ import TasksView from '@/views/TasksView.vue'
 import SkillCreatorView from '@/views/SkillCreatorView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import AdminView from '@/views/AdminView.vue'
-import RecordingView from '@/views/RecordingView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -66,13 +65,6 @@ const router = createRouter({
       meta: { requiresAdmin: true }
     },
 
-    {
-      path: '/transcript',
-      name: 'transcript',
-      component: RecordingView,
-    },
-
-    
   ]
 })
 

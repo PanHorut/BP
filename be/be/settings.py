@@ -21,7 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+#OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+AZURE_API_KEY = os.getenv('AZURE_API_KEY')
+AZURE_REGION = os.getenv('AZURE_REGION')
 
 
 # Quick-start development settings - unsuitable for production
@@ -34,6 +36,7 @@ SECRET_KEY = 'django-insecure-3zibbwj&l%j)_dh%+*tr*xvx^uun)z3=bcq35ps#d7p%ktvzgz
 DEBUG = True #os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['*']
+
 
 
 # Application definition
@@ -82,6 +85,12 @@ TEMPLATES = [
         },
     },
 ]
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 WSGI_APPLICATION = 'be.wsgi.application'
 ASGI_APPLICATION = 'be.asgi.application'
@@ -161,3 +170,5 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+
