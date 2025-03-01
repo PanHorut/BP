@@ -22,7 +22,7 @@ export const useRecorderStore = defineStore("recorder", () => {
   const startRecording = async () => {
     try {
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        ws = new WebSocket("ws://localhost:8000/ws/speech/");
+        ws = new WebSocket("ws://drillovacka.applikuapp.com/ws/speech/"); // "ws://localhost:8000/ws/speech/"
         ws.onopen = () => {
           console.log("WebSocket connection opened.");
           sendExampleData();

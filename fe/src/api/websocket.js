@@ -1,5 +1,3 @@
-// websocket.js
-
 let socket = null;
 
 export const connectWebSocket = (url, onMessageReceived, onError, onOpen, onClose) => {
