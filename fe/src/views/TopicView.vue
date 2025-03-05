@@ -25,11 +25,12 @@ onMounted(async () => {
 
     if(topic.value.skill_type === 'OPERATION') {
       subtopics.value = await getRelatedSkillsTree(props.id);
-
+      console.log(subtopics.value);
     } else if(topic.value.skill_type === 'NUMBER_DOMAIN') {
       subtopics.value = await getChildrenSkillsTree(props.id, false);
       operations.value = await getOperationSkills(props.id);
-      
+      console.log(operations.value);
+      console.log(subtopics.value);
     } else if(topic.value.skill_type === 'EQUATION') {
       subtopics.value = await getChildrenSkillsTree(props.id, true);
     } 

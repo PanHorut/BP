@@ -62,8 +62,9 @@ def build_skill_tree(skill, visited=None, skill_ids=None, related_skills=None, w
         examples_count = examples_with_skills(skill_ids)
     
     
-    # create the tree for this skill and recursively build trees of its children
-    return {
+    # nechci obecne skilly jako Operace nebo Číselné obory
+    if skill.height >= 3:
+        return {
         "id": skill.id,
         "name": skill.name,
         "examples": examples_count,
@@ -75,7 +76,7 @@ def build_skill_tree(skill, visited=None, skill_ids=None, related_skills=None, w
 
 
 # get skill paths from skill list 
-def get_skill_paths(skill_ids):
+def get_skill_paths(skill_ids, merge=True):
     skills = Skill.objects.filter(id__in=skill_ids).select_related('parent_skill')
     
     skill_dict = {skill.id: skill for skill in skills}
@@ -106,8 +107,11 @@ def get_skill_paths(skill_ids):
 
     for root in root_skills:
         build_paths(root, [])
-    
-    return merge_unique_lists(paths)
+
+    if merge:       
+        return merge_unique_lists(paths)
+    else:
+        return paths
 
 # merge created skill paths with unrelated skills 
 def merge_unique_lists(input_lists):

@@ -4,11 +4,22 @@ from django.contrib.auth.hashers import make_password, check_password
 
 
 class Task(models.Model):
+
+    FORM_CHOICES = [
+        ('classic', 'Classic'),
+        ('word-problem', 'Word Problem'),
+    ]
+
     name = models.CharField(max_length=255)
     skills = models.ManyToManyField(
         'Skill',  
         blank=True,  
         related_name='tasks' 
+    )
+    form = models.CharField(
+        max_length=20, 
+        choices=FORM_CHOICES, 
+        default='classic', 
     )
 
 class Example(models.Model):

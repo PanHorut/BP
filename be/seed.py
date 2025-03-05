@@ -10,6 +10,7 @@ django.setup()
 
 from api.models import Admin, Skill  # Assuming your Admin model is in the 'api' app
 from api.answerChecker import AnswerChecker, InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker    
+from api.utils import get_skill_paths
 
 
 
@@ -25,7 +26,7 @@ if __name__ == "__main__":
     #print(f"Admin user '{username}' created successfully!")
     answers = ["21"]
     #print(FractionAnswerChecker.verifyAnswer(10, 57, "2025-02-12 19:27:58.753704", 10, answers))   
-    print(VariableAnswerChecker.verifyAnswer(10, 61, "2025-02-12 19:27:58.753704", 10, answers))
+    print(get_skill_paths([55, 56, 61, 67, 69], False))
 
   
     

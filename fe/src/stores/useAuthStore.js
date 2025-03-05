@@ -41,14 +41,8 @@ export const useAuthStore = defineStore('auth', {
             visible: true,
           });
           
-
-          // Redirect to a protected route
-          if(isAdmin){
-            router.push({ name: 'admin' });
-
-          }else{
-            router.push({ name: 'home' });
-          }
+          router.push({ name: 'home' });
+          
 
         } else {
           this.errorMessage = result.error;
@@ -76,7 +70,9 @@ export const useAuthStore = defineStore('auth', {
         visible: true,
       });
 
-      router.push({ name: 'home' });
+      router.push({ name: 'home' }).then(() => {
+        window.location.reload();
+      });
     },
     loadStoredSession() {
       const storedName = localStorage.getItem('name');

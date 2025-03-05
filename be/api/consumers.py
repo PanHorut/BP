@@ -76,15 +76,25 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                     future.result()  # Wait for the result to ensure it's processed
 
                     from .utils import calculate_duration
-                    from .answerChecker import InlineSpeechAnswerChecker
+                    from .answerChecker import InlineSpeechAnswerChecker, FractionSpeechAnswerChecker, VariableSpeechAnswerChecker
 
                     student_id = self.metadata.get('student_id')
                     example_id = self.metadata.get('example_id')
+                    input_type = self.metadata.get('input_type')
                     record_date = self.metadata.get('record_date')
+
                     duration = calculate_duration(record_date)
                     student_answer = evt.result.text
 
-                    isCorrect, continue_with_next = InlineSpeechAnswerChecker.verifyAnswer(student_id, example_id, record_date, duration, student_answer)
+                    if(input_type == 'INLINE'):
+                        isCorrect, continue_with_next = InlineSpeechAnswerChecker.verifyAnswer(student_id, example_id, record_date, duration, student_answer)
+
+                    elif(input_type == 'FRAC'):
+                        isCorrect, continue_with_next = FractionSpeechAnswerChecker.verifyAnswer(student_id, example_id, record_date, duration, student_answer)
+                        
+                    elif(input_type == 'VAR'):
+                        isCorrect, continue_with_next = VariableSpeechAnswerChecker.verifyAnswer(student_id, example_id, record_date, duration, student_answer)
+
 
                     response_data = {
                         "isCorrect": isCorrect,

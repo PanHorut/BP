@@ -91,9 +91,12 @@ class VariableAnswerChecker(AnswerChecker):
         correct_answer = Answer.objects.get(example_id=example_id).answer
 
         correct_variables = correct_answer.split(';')
+        correct_variables = [variable.strip() for variable in correct_variables if variable.strip()]
 
         correct_values = []
         student_values = []
+
+       
 
         for variable in correct_variables:
             value = variable.split('=')[1].strip()
@@ -124,29 +127,102 @@ class InlineSpeechAnswerChecker(AnswerChecker):
     def verifyAnswer(student_id, example_id, date, duration, student_answer):   
         correct_answer = Answer.objects.get(example_id=example_id).answer
 
-        # Convert correct answer to float
         try:
             correct_answer = float(correct_answer.replace(",", "."))
         except ValueError:
             print("Invalid correct answer format.")
             return (False, False)
 
-        # Normalize student's answer (replace ',' with '.' for decimal numbers)
         student_answer = student_answer.replace(",", ".")
 
-        # Extract all numbers (integers and decimals) from student's answer
         numbers_in_answer = re.findall(r'\d+\.\d+|\d+', student_answer)
         
-        # Convert extracted numbers to floats
         extracted_numbers = [float(num) for num in numbers_in_answer]
 
         print(f"Extracted Numbers: {extracted_numbers}, Correct Answer: {correct_answer}")
 
-        # Check if any extracted number matches the correct answer
         is_correct = any(AnswerChecker.compareAnswers(num, correct_answer) for num in extracted_numbers)
 
-        # Update the record based on whether the answer is correct
         continue_with_next = InlineSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, is_correct)
 
         return (is_correct, continue_with_next)
+
+class FractionSpeechAnswerChecker(AnswerChecker):
     
+    @staticmethod
+    def verifyAnswer(student_id, example_id, date, duration, student_answer):   
+        correct_answer = Answer.objects.get(example_id=example_id).answer
+
+        match = re.match(r"\\frac\{(\d+)\}\{(\d+)\}", correct_answer)
+        if match:
+            correct_numerator = float(match.group(1).replace(',', '.'))
+            correct_denominator = float(match.group(2).replace(',', '.'))
+        else:
+            print("Invalid fraction format.")
+            return (False, False) 
+
+        numbers_in_answer = re.findall(r'\d+\.\d+|\d+', student_answer)
+
+        if not numbers_in_answer:
+            print("Invalid student fraction format.")
+            return (False, False) 
+
+        student_fractions = []
+        i = 0
+        while i < len(numbers_in_answer) - 1:
+            numerator = float(numbers_in_answer[i].replace(',', '.'))
+            denominator = float(numbers_in_answer[i+1].replace(',', '.'))
+            student_fractions.append((numerator, denominator))
+            i += 2  # dalsi par citatel a jmenovatel = +2
+
+        for student_numerator, student_denominator in student_fractions:
+            if (AnswerChecker.compareAnswers(correct_numerator, student_numerator) and 
+                AnswerChecker.compareAnswers(correct_denominator, student_denominator)):
+                
+                continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
+                return (True, continue_with_next)
+
+        continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+        return (False, continue_with_next)
+
+class VariableSpeechAnswerChecker(AnswerChecker):
+    
+    @staticmethod   
+    def verifyAnswer(student_id, example_id, date, duration, student_answer):
+
+        correct_answer = Answer.objects.get(example_id=example_id).answer
+        
+        # Split the correct answer based on semicolons (e.g., "x=8; y=4")
+        correct_variables = correct_answer.split(';')
+        correct_variables = [variable.strip() for variable in correct_variables if variable.strip()]
+
+
+        # Initialize lists to store the correct values and student values
+        correct_values = []
+        student_values = []
+        
+        # Extract the correct values from the correct answer
+        for variable in correct_variables:
+            value = variable.split('=')[1].strip()  # Extract value after '='
+            correct_values.append(float(value.replace(',', '.')))  # Store as float
+
+        # Now extract all variables and their values from the student's answer
+        student_matches = re.findall(r"([a-zA-Z]+)\s*(rovná se|je)\s*([\d,]+)", student_answer, re.IGNORECASE)
+        
+        # Store the student's extracted values
+        for match in student_matches:
+            student_value_str = match[2].replace(',', '.')  # Ensure decimal uses dot
+            try:
+                student_value = float(student_value_str)  # Convert to float
+            except ValueError:
+                student_value = 0.0  # In case of any issue with conversion, default to 0.0
+            student_values.append(student_value)
+
+        # Compare the lists of correct values and student values
+        print(f"Correct values: {correct_values}, Student values: {student_values}")
+        if sorted(correct_values) == sorted(student_values):  # Sort to ensure order doesn't matter
+            continue_with_next = VariableSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
+            return (True, continue_with_next)
+        else:
+            continue_with_next = VariableSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+            return (False, continue_with_next)

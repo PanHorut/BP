@@ -7,6 +7,7 @@ export const useRecorderStore = defineStore("recorder", () => {
   let ws = null;
   const student_id = ref(null);
   const example_id = ref(null);
+  const input_type = ref(null); 
   const record_date = ref(null);
 
   // Store result from WebSocket
@@ -22,7 +23,7 @@ export const useRecorderStore = defineStore("recorder", () => {
   const startRecording = async () => {
     try {
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        ws = new WebSocket("wss://drillovacka.applikuapp.com/ws/speech/"); // // "ws://localhost:8000/ws/speech/" 
+        ws = new WebSocket("wss://drillovacka.applikuapp.com/ws/speech/"); //  "ws://localhost:8000/ws/speech/"
         ws.onopen = () => {
           console.log("WebSocket connection opened.");
           sendExampleData();
@@ -76,13 +77,14 @@ export const useRecorderStore = defineStore("recorder", () => {
 
   const sendExampleData = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ student_id: student_id.value, example_id: example_id.value, record_date: record_date.value }));
+      ws.send(JSON.stringify({ student_id: student_id.value, example_id: example_id.value, record_date: record_date.value, input_type: input_type.value }));
     }
   };
 
-  const updateExampleData = (studentId, exampleId, recordDate) => {
+  const updateExampleData = (studentId, exampleId, inputType, recordDate) => {
     student_id.value = studentId;
     example_id.value = exampleId;
+    input_type.value = inputType;
     record_date.value = recordDate;
     sendExampleData();
   };

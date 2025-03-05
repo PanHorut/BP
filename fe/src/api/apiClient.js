@@ -2,7 +2,7 @@ import axios from 'axios';
 import qs from 'qs'; 
 
 const apiClient = axios.create({
-  baseURL: 'https://drillovacka.applikuapp.com/api/',// 'https://bp-production-37c0.up.railway.app/api/', // , 'http://localhost:8000/api/',
+  baseURL: 'https://drillovacka.applikuapp.com/api/',// 'https://bp-production-37c0.up.railway.app/api/', // , // 'http://localhost:8000/api/'
   headers: {
     //'Content-Type': 'application/json',
   },
@@ -66,11 +66,12 @@ export const skipExample = async (studentId, exampleId, date) => {
     }
 }
 
-export const postTask = async (examples, selectedSkills, taskName, taskId, action) => {
+export const postTask = async (examples, selectedSkills, taskName, taskId, taskForm, action) => {
   try {
       const payload = {
           task_name: taskName,
           task_id: taskId,
+          task_form: taskForm,  
           skill_ids: selectedSkills.map(skill => skill.id),
           examples: examples.value.map(example => ({
               example: example.example,
@@ -193,14 +194,23 @@ export const getSkillTree = async () => {
   }
 };
 
-export const searchSkills = async (query) => {
+export const searchSkills = async (query, skillId) => {
   try {
-    const response = await apiClient.get(`skills/search/?q=${query}`);
+    // Send both query and parent_skill_id in the API request
+    const response = await apiClient.get('skills/search/', {
+      params: {
+        q: query,
+        skill_id: skillId
+      }
+    });
     return response.data;
   } catch (error) {
     console.error('Error fetching search results:', error);
+    return [];
   }
 }
+
+
 
 export const getLandingPageSkills = async () => {
   try {
@@ -323,5 +333,20 @@ export const getChartData = async (studentId, dataType) => {
   }
 };
 
+export const getSandboxSkillPaths = async (skillIds) => {
+  try {
+    const response = await apiClient.get('skills/paths/sandbox/', {
+      params: {
+        skill_ids: skillIds
+      },
+      paramsSerializer: (params) => {
+        return new URLSearchParams(params).toString();
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching sandbox skill paths:', error);
+  }
+}
 
 export default apiClient;

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 const frac = computed(() => `\\(\\frac{a}{b}\\)`);
 const pwr2 = computed(() => `\\(a^2\\)`);
@@ -23,11 +23,25 @@ function renderMathJax() {
   }
 }
 
+const isHidden = ref(window.innerWidth < 1100);
+
+const checkWindowSize = () => {
+  isHidden.value = window.innerWidth < 1100;
+};
+
+
 onMounted(() => {
   renderMathJax();
+  window.addEventListener('resize', checkWindowSize);
+  checkWindowSize(); 
 });
 
-const isHidden = ref(false);
+onUnmounted(() => {
+  window.removeEventListener('resize', checkWindowSize);
+});
+
+
+
 
 const toggleToolbar = () => {
   isHidden.value = !isHidden.value;

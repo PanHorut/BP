@@ -1,6 +1,7 @@
 <script setup>
 import { ref, defineProps, defineEmits, nextTick, onMounted } from 'vue';
 import ExampleCreator from './ExampleCreator.vue';
+import WordProblemCreator from './WordProblemCreator.vue';
 import { postTask } from '@/api/apiClient';
 import { useToastStore } from '@/stores/useToastStore';
 import { useTaskStore } from '@/stores/useTaskStore';
@@ -11,14 +12,16 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-
   inputType: {
     type: String
   },
-
   taskName: {
     type: String,
     default: "Cvičení"
+  },
+  examplesType: {
+    type: String,
+    default: "classic"
   }
 });
 
@@ -86,7 +89,7 @@ const submitExamples = async (action) => {
       });
       return;
     }
-    await postTask(examples, props.selectedSkills, props.taskName, taskId.value, action);
+    await postTask(examples, props.selectedSkills, props.taskName, taskId.value, props.examplesType, action);
     toastStore.addToast({
         message: action == 'create' ? 'Sada byla vytvořena' : 'Změny byly uloženy',
         type: 'success',
@@ -114,7 +117,7 @@ const exportJSON = () => {
     }
   });
 
-  task.value = { 'task_name': props.taskName, 'skill_ids': props.selectedSkills, 'examples': examples };
+  task.value = { 'task_name': props.taskName, 'form': props.examplesType, 'skill_ids': props.selectedSkills, 'examples': examples };
   taskJSON.value = JSON.stringify(task.value, null, 2);
 
   isExportOpen.value = true;
@@ -145,7 +148,8 @@ const importJSON = () => {
     });
 
     // Import task name and skills
-    emit('importTask', task.value.task_name, task.value.skill_ids);
+    
+    emit('importTask', task.value.task_name, task.value.skill_ids, task.value.form);
   }
 };
 
@@ -230,9 +234,7 @@ const importTask = () => {
         }
       });
     });
-
-    // Import task name and skills
-    emit('importTask', task.task_name, skills);
+    emit('importTask', task.task_name, skills, task.task_form);
   
 };
 
@@ -248,13 +250,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center">
+  <div class="flex flex-col items-center w-full">
     <div class="flex">
       <div @click="exportJSON" class="p-2 border-2 border-primary bg-primary text-white font-bold absolute right-4 top-32 rounded-md cursor-pointer">EXPORT</div>
       <div @click="toggleImportWindow" class="p-2  border-2 border-primary text-primary font-bold absolute right-28 top-32 rounded-md cursor-pointer">IMPORT</div>
     </div>
-    <div class="justify-center mt-20 grid grid-cols-1 xl:grid-cols-2 gap-4">
+    <div v-if="props.examplesType == 'classic'" class="justify-center mt-12 grid grid-cols-1 xl:grid-cols-2 gap-4">
       <ExampleCreator
+        v-for="index in exampleCount"
+        :key="index"
+        :number="index"
+        ref="exampleCreators"
+      />
+    </div>
+    <div v-else class="justify-center mt-12 grid grid-cols-1 gap-4 w-full">
+      <WordProblemCreator
         v-for="index in exampleCount"
         :key="index"
         :number="index"

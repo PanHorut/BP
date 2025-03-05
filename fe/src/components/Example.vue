@@ -34,6 +34,8 @@ const student_id = authStore.id || 1;
 const speechRecorder = ref(null);
 const recorderStore = useRecorderStore(); 
 
+let isWordProblem = ref(false);
+
 const checkInline = async (answer) => {
 
   
@@ -91,9 +93,8 @@ const checkSet = async (variables) => {
 const initRecord = async () => {
   const result = await createRecord(student_id , props.example.id);
   record_date.value = result.date;
-
   if (speechRecorder.value) {
-      speechRecorder.value.updateExampleData(student_id, props.example.id, record_date.value);
+      speechRecorder.value.updateExampleData(student_id, props.example.id, props.example.input_type, record_date.value);
   }
   
 }
@@ -114,6 +115,7 @@ watch(
   () => props.example,
   () => {
     renderMathJax();
+    isWordProblem = props.example.input_type == 'WORD';
   },
   { immediate: true }
 );
@@ -205,10 +207,10 @@ defineExpose({getStep});
   <div class="flex items-center justify-center mt-20">
     
     <div class="flex flex-col">
-      <div class="text-8xl">
+      <div :class="isWordProblem ? 'text-3xl flex flex-col items-center' : 'text-8xl'">
        
-          <div class="flex w-32 items-center">
-            {{ renderedExample }}
+          <div class="flex items-center" :class="isWordProblem ? 'w-2/3 ' : 'w-32'">
+            {{isWordProblem ? example.example : renderedExample }}
           </div>
           
         <div class="flex mt-10 items-center">
@@ -217,6 +219,7 @@ defineExpose({getStep});
           <FractionInput v-else-if="props.example.input_type == 'FRAC'" ref="fractionInput" @answerSent="checkFraction"></FractionInput>
           <SetInput v-else-if="props.example.input_type == 'SET'" ref="setInput" :answer="props.answer" @answerSent="checkSet"></SetInput>      
           <InlineInput v-else-if="props.example.input_type == 'INLINE'" ref="inlineInput" @answerSent="checkInline"></InlineInput>
+          <InlineInput v-else-if="props.example.input_type == 'WORD'" ref="inlineInput" @answerSent="checkInline"></InlineInput>
           <SpeechRecorder ref="speechRecorder" class="ml-8"></SpeechRecorder>
 
       </div>

@@ -39,21 +39,23 @@ def create_skill_relations(skill_ids):
 @api_view(['POST'])
 def create_task(request):
     task_name = request.data.get('task_name')
+    task_form = request.data.get('task_form')
     skill_ids = request.data.get('skill_ids', [])
-    examples_data = request.data.get('examples', [])  # Array of examples
+    examples_data = request.data.get('examples', [])  
 
-    # Ensure the task name is provided
     if not task_name:
         return Response({"error": "Nebyl zadán název sady"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Fetch skills
     skills = Skill.objects.filter(id__in=skill_ids)
 
     if not skills.exists():
         return Response({"error": "At least one valid skill ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Create or retrieve the Task instance
     task_instance, created = Task.objects.get_or_create(name=task_name)
+
+    task_instance.form = task_form 
+
+    task_instance.save()
 
     # Assign skills to the task
     task_instance.skills.add(*skills)
@@ -180,7 +182,12 @@ def edit_task(request):
                 defaults={'answer': answer_text}
             )
 
-        # Update or create ExampleSkill instances
+        existing_relations = ExampleSkill.objects.filter(example=example_instance)
+
+        new_skill_ids = set(skill.id for skill in skills)
+
+        existing_relations.exclude(skill_id__in=new_skill_ids).delete()
+        
         for skill in skills:
             ExampleSkill.objects.update_or_create(example=example_instance, skill=skill)
         
@@ -419,6 +426,7 @@ def get_tasks(request):
         {
             "task_id": task.id,
             "task_name": task.name,
+            "task_form": task.form,
             "examples": [
                 {
                     "example_id": example.id,
@@ -571,24 +579,44 @@ def get_skill_tree(request):
 
 @api_view(['GET'])
 def search_skills(request):
-    query = request.GET.get('q', '')
+    query = request.GET.get('q', '') 
+    skill_id = request.GET.get('skill_id', None) 
 
-    if not query:
+    if not skill_id:
+        return Response([]) 
+
+    try:
+        parent_skill = Skill.objects.get(id=skill_id)
+    except Skill.DoesNotExist:
         return Response([])
 
-    # Filter skills by name (case insensitive)
-    skills = Skill.objects.filter(name__icontains=query)
-    
-    # Serialize the skills
+    if query:
+        skills = Skill.objects.filter(
+            name__icontains=query, 
+            parent_skill=parent_skill  
+        )
+    else:
+        skills = Skill.objects.filter(parent_skill=parent_skill)
+
     skill_list = SkillSerializer(skills, many=True).data
 
     return Response(skill_list)
 
+
 @api_view(['GET'])
 def get_landing_page_skills(request):
-    skills = Skill.objects.filter(height=3) 
-    serializer = SkillSerializer(skills, many=True)  
-    return Response(serializer.data) 
+
+    skills_with_height = Skill.objects.filter(height__lte=3)
+
+    leaf_skills = skills_with_height.filter(subskills__isnull=True)
+
+    skills_with_height_3 = Skill.objects.filter(height=3)
+
+    skills = leaf_skills | skills_with_height_3
+
+    serializer = SkillSerializer(skills, many=True)
+
+    return Response(serializer.data)
 
 @api_view(['GET'])
 def get_related_skills_tree(request, skill_id):
@@ -666,12 +694,12 @@ def get_operation_skills(request, skill_id):
                     "related_name": child_skill.name,
                     "examples": examples_count
                 })
-
-            skills_data.append({
+            if operation_skill.height >= 3:
+                skills_data.append({
                 "id": operation_skill.id,
                 "name": operation_skill.name,
                 "related_skills": child_data  # List of children with their common examples count
-            })
+                })
 
         return Response(skills_data)
     
@@ -751,7 +779,7 @@ def check_answer(request):
         return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
     
     match answer_type:
-        case "inline":
+        case "inline" | "word":
             isCorrect, continue_with_next = InlineAnswerChecker.verifyAnswer(student_id, example_id, date, duration, student_answer)
             pass
 
@@ -858,62 +886,17 @@ def counted_examples(request):
 
     return JsonResponse(response_data, safe=False)
 
-""""
-@api_view(['POST'])
-def transcribe_audio(request):
-    if request.method == 'POST' and request.FILES.get('audio_chunk'):
-        # Get the uploaded audio file
-        audio_chunk = request.FILES['audio_chunk']
-        
-        # Log the MIME type for debugging
-        print("Received file format:", audio_chunk.content_type)
+@api_view(['GET'])
+def get_paths_for_sandbox(request):
+    skill_ids = request.GET.getlist('skill_ids', [])  
 
-        # Define the path where the audio file will be saved
-        audio_file_path = os.path.join(BASE_DIR, 'uploaded_audio.webm')
-        
-        try:
-            # Save the audio file to the server
-            with open(audio_file_path, 'wb') as f:
-                for chunk in audio_chunk.chunks():
-                    f.write(chunk)
-            
-            # Return a success response with the saved file's path
-            return JsonResponse({'message': 'Audio file saved successfully', 'file_path': audio_file_path}, status=200)
+    if len(skill_ids) == 1 and ',' in skill_ids[0]:
+        skill_ids = skill_ids[0].split(',')
 
-        except Exception as e:
-            return JsonResponse({'error': f'Error saving audio file: {str(e)}'}, status=400)
+    try:
+        skill_ids = [int(id) for id in skill_ids] 
+        skill_paths = get_skill_paths(skill_ids, False)
+        return Response(skill_paths, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    else:
-        return JsonResponse({'error': 'No audio file received'}, status=400)
-
-
-@api_view(['POST'])
-def transcribe_audio(request):
-    if request.method == 'POST' and request.FILES.get('audio_chunk'):
-        audio_chunk = request.FILES['audio_chunk']
-        print("Received file format:", audio_chunk.content_type) 
-
-        # Use a BytesIO object to handle the file in memory instead of saving it to disk
-        audio_file = BytesIO()
-        for chunk in audio_chunk.chunks():
-            audio_file.write(chunk)
-        
-        # Ensure the file pointer is at the start of the audio file before sending it
-        audio_file.seek(0)
-
-        try:
-            # Send the audio file to OpenAI Whisper API for transcription
-            transcription = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file,
-            )
-
-            # Return the transcription text
-            return JsonResponse({'transcription': transcription['text']}, status=200)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
-
-    else:
-        return JsonResponse({'error': 'No audio file received'}, status=400)
-"""

@@ -30,6 +30,8 @@ urlpatterns = [
     path('skills/<int:skill_id>/tree/related', views.get_related_skills_tree, name='related_skills_tree'),
     path('skills/<int:skill_id>/tree/children', views.get_children_skills_tree, name='children_skills_tree'),
     path('skills/<int:skill_id>/operations', views.get_operation_skills, name='operation_skills'),
+    path('skills/paths/sandbox/', views.get_paths_for_sandbox, name='get-sandbox-paths'),
+
 
     path('register/student', views.register_student, name='register_student'),
     path('login/student', views.login_student, name='login_student'),
@@ -39,10 +41,6 @@ urlpatterns = [
 
     path('chart-data/duration/', views.average_duration, name='average-duration'),   
     path('chart-data/examples/', views.counted_examples, name='counted-examples'),   
-
-
-
-    #path('transcribe-chunk/', views.transcribe_audio, name='transcribe_audio_chunk'),
 
 ]
 
