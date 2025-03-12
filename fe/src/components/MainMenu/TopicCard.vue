@@ -25,12 +25,15 @@ function goToTopicDetail() {
 </script>
 
 <template>
-    <div @click="goToTopicDetail" class="cursor-pointer border border-gray-300 rounded-lg shadow-lg max-w-md bg-white">
-
-        <h2 class="flex justify-center text-2xl text-center font-bold text-gray-800 p-4">
-           {{ topic }}
-        </h2>
-        
-    </div>
-
+  <div 
+    @click="goToTopicDetail" 
+    class="cursor-pointer border border-gray-300 rounded-lg shadow-lg max-w-md bg-white 
+           transition transform  hover:shadow-xl 
+           hover:bg-secondary hover:border-secondary"
+  >
+    <h2 class="flex justify-center text-3xl text-center font-bold text-primary p-4 
+              transition duration-300 ease-in-out hover:text-white">
+      {{ topic }}
+    </h2>
+  </div>
 </template>

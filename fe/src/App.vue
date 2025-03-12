@@ -1,5 +1,6 @@
 <script setup>
 import Navbar from '@/components/Navbar.vue';
+import Footer from '@/components/Footer.vue';
 import { RouterView } from 'vue-router';
 import ToastManager from '@/components/Toast/ToastManager.vue';
 import { onMounted, onBeforeUnmount } from 'vue';
@@ -34,5 +35,8 @@ onBeforeUnmount(() => {
   <div class="bg-white min-h-screen">
     <RouterView />
   </div>
+
+  <Footer />
+  
 
 </template>

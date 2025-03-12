@@ -118,7 +118,7 @@ const percentages = computed(() => {
         </div>
 
         <div class="flex justify-center mt-16 mb-6">
-            <RouterLink to="/" class="text-center text-3xl bg-secondary hover:bg-white text-white hover:text-secondary border-4 border-secondary rounded-xl font-semibold px-4 py-2 cursor-pointer">
+            <RouterLink to="/" class="text-center text-3xl bg-secondary hover:bg-white text-white hover:text-secondary border-4 border-secondary rounded-xl font-semibold px-4 py-2 cursor-pointer transition">
                 Zpět na hlavní stránku
             </RouterLink>
         </div>

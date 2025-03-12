@@ -24,6 +24,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 #OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 AZURE_API_KEY = os.getenv('AZURE_API_KEY')
 AZURE_REGION = os.getenv('AZURE_REGION')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 
 # Quick-start development settings - unsuitable for production

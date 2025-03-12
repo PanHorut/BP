@@ -141,11 +141,21 @@ class InlineSpeechAnswerChecker(AnswerChecker):
 
         print(f"Extracted Numbers: {extracted_numbers}, Correct Answer: {correct_answer}")
 
-        is_correct = any(AnswerChecker.compareAnswers(num, correct_answer) for num in extracted_numbers)
+        correct_number = None
+        is_correct = False
+
+        for num in extracted_numbers:
+            if AnswerChecker.compareAnswers(num, correct_answer):
+                is_correct = True
+                correct_number = num
+                break  # Stop at the first correct number
+
+        if not is_correct and extracted_numbers:
+            correct_number = extracted_numbers[-1] 
 
         continue_with_next = InlineSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, is_correct)
 
-        return (is_correct, continue_with_next)
+        return (is_correct, continue_with_next, correct_number)
 
 class FractionSpeechAnswerChecker(AnswerChecker):
     
@@ -180,10 +190,10 @@ class FractionSpeechAnswerChecker(AnswerChecker):
                 AnswerChecker.compareAnswers(correct_denominator, student_denominator)):
                 
                 continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
-                return (True, continue_with_next)
+                return (True, continue_with_next, {"numerator": student_numerator, "denominator": student_denominator})
 
         continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
-        return (False, continue_with_next)
+        return (False, continue_with_next, {"numerator": student_fractions[-1][0], "denominator": student_fractions[-1][1]})
 
 class VariableSpeechAnswerChecker(AnswerChecker):
     
@@ -218,11 +228,10 @@ class VariableSpeechAnswerChecker(AnswerChecker):
                 student_value = 0.0  # In case of any issue with conversion, default to 0.0
             student_values.append(student_value)
 
-        # Compare the lists of correct values and student values
         print(f"Correct values: {correct_values}, Student values: {student_values}")
-        if sorted(correct_values) == sorted(student_values):  # Sort to ensure order doesn't matter
+        if sorted(correct_values) == sorted(student_values): 
             continue_with_next = VariableSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
-            return (True, continue_with_next)
+            return (True, continue_with_next, student_values)
         else:
             continue_with_next = VariableSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
-            return (False, continue_with_next)
+            return (False, continue_with_next, student_values)

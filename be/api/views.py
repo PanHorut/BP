@@ -115,6 +115,7 @@ def create_task(request):
 def edit_task(request):
     task_id = request.data.get('task_id')
     task_name = request.data.get('task_name')
+    task_form = request.data.get('task_form')   
     skill_ids = request.data.get('skill_ids', [])
     examples_data = request.data.get('examples', [])  # Array of examples
 
@@ -131,6 +132,7 @@ def edit_task(request):
     # Update task name if provided
     if task_name:
         task_instance.name = task_name
+        task_instance.form = task_form
         task_instance.save()
 
     # Fetch skills
@@ -187,7 +189,7 @@ def edit_task(request):
         new_skill_ids = set(skill.id for skill in skills)
 
         existing_relations.exclude(skill_id__in=new_skill_ids).delete()
-        
+
         for skill in skills:
             ExampleSkill.objects.update_or_create(example=example_instance, skill=skill)
         
@@ -609,10 +611,10 @@ def get_landing_page_skills(request):
     skills_with_height = Skill.objects.filter(height__lte=3)
 
     leaf_skills = skills_with_height.filter(subskills__isnull=True)
-
+    
     skills_with_height_3 = Skill.objects.filter(height=3)
 
-    skills = leaf_skills | skills_with_height_3
+    skills = (leaf_skills | skills_with_height_3).distinct()
 
     serializer = SkillSerializer(skills, many=True)
 

@@ -103,3 +103,10 @@ class Admin(models.Model):
 
     def __str__(self):
         return self.username
+
+class AudioPrompt(models.Model):
+    audio_data = models.BinaryField()
+    transcription = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True)
+    example = models.ForeignKey(Example, on_delete=models.CASCADE, null=True, blank=True)

@@ -77,8 +77,8 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center">
-    <h1 class="text-4xl font-bold text-primary my-8" v-if="topic">
+  <div class="flex flex-col items-center pt-20">
+    <h1 class="text-5xl font-bold text-primary my-8" v-if="topic">
       {{ topic.name }}
     </h1>
     

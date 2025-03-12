@@ -97,6 +97,7 @@ const displayNext = async (data) => {
 
     if (curr_index.value === examples.value.length) {
       recorderStore.stopRecording();  
+      recorderStore.student_answer = '';
       showSummary.value = true;
     }
 
@@ -137,6 +138,7 @@ const displayIcon = async (correct) => {
 
 const displaySummary = () => {
   recorderStore.stopRecording();
+  recorderStore.student_answer = '';
   showSummary.value = true;
 };
 

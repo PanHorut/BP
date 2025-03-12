@@ -13,6 +13,9 @@ export const useRecorderStore = defineStore("recorder", () => {
   // Store result from WebSocket
   const isCorrect = ref(null);
   const continueWithNext = ref(null);
+  const student_answer = ref(null);
+
+  const allowedRecording = ref(false);
 
   let emitFunction = null; // Store emit function reference
 
@@ -23,7 +26,7 @@ export const useRecorderStore = defineStore("recorder", () => {
   const startRecording = async () => {
     try {
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        ws = new WebSocket("wss://drillovacka.applikuapp.com/ws/speech/"); //  "ws://localhost:8000/ws/speech/"
+        ws = new WebSocket("wss://drillovacka.applikuapp.com/ws/speech/"); //    "ws://localhost:8000/ws/speech/"
         ws.onopen = () => {
           console.log("WebSocket connection opened.");
           sendExampleData();
@@ -32,19 +35,32 @@ export const useRecorderStore = defineStore("recorder", () => {
           const data = JSON.parse(event.data);
           
           // Store values
-          isCorrect.value = data.isCorrect;
-          continueWithNext.value = data.continue_with_next;
 
-          console.log("Answer Correct:", data.isCorrect);
-          console.log("Continue with Next:", data.continue_with_next);
+          if(data.skipped == true){
+            if (emitFunction) {
+              emitFunction("skipped",{skipped: true});
+            }
+          
+          } else if(data.finished == true){
+            if (emitFunction) {
+              emitFunction("finished");
+            }
 
-          // 🔹 Emit event to parent component
-          if (emitFunction) {
-            emitFunction("answerSent", {
-              isCorrect: data.isCorrect,
-              nextExample: data.continue_with_next,
-            });
+          }else{
+            isCorrect.value = data.isCorrect;
+            continueWithNext.value = data.continue_with_next;
+            student_answer.value = data.student_answer;
+            if (emitFunction) {
+              emitFunction("answerSent", {
+                isCorrect: data.isCorrect,
+                nextExample: data.continue_with_next,
+                studentAnswer: data.student_answer,
+              });
+            }
           }
+          console.log("WebSocket message received:", data);
+
+          
         };
       }
 
@@ -89,6 +105,10 @@ export const useRecorderStore = defineStore("recorder", () => {
     sendExampleData();
   };
 
+  const allowRecording = () => {
+    allowedRecording.value = true;
+  };
+
   const closeWebSocket = () => {
     if (ws) {
       ws.close();
@@ -98,9 +118,9 @@ export const useRecorderStore = defineStore("recorder", () => {
     }
   };
 
-  // Ensure WebSocket closes when navigating away
   onUnmounted(() => {
     console.log("Component unmounted, closing WebSocket...");
+    allowedRecording.value = false;
     closeWebSocket();
   });
 
@@ -109,8 +129,11 @@ export const useRecorderStore = defineStore("recorder", () => {
     startRecording,
     stopRecording,
     updateExampleData,
+    allowRecording,
+    allowedRecording,
     isCorrect,
     continueWithNext,
-    setEmitFunction, // Expose this function
+    student_answer,
+    setEmitFunction,
   };
 });

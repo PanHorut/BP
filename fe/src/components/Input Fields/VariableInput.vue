@@ -1,5 +1,6 @@
 <script setup>
 import { defineProps, ref, watch, defineEmits, computed } from 'vue';
+import { useRecorderStore } from '@/stores/useRecorderStore';
 
 const props = defineProps({
     answer: {
@@ -8,6 +9,7 @@ const props = defineProps({
     }
 });
 const variables = ref([]);
+const recorderStore = useRecorderStore();   
 
 const emits = defineEmits(['answerSent']); 
 
@@ -48,6 +50,27 @@ function updateAnswers() {
     }, {});
     //emits('updateAnswers', answers);
 }
+
+watch(
+    () => [recorderStore.isRecording, recorderStore.student_answer],
+    ([isRecording, studentAnswer]) => {
+        if (isRecording && Array.isArray(studentAnswer) && studentAnswer.length) {
+            
+            studentAnswer.forEach((val, index) => {
+                if (variables.value[index]) {
+                    variables.value[index].answer = val;
+                }
+            });
+
+            setTimeout(() => {
+                variables.value.forEach(variable => {
+                    variable.answer = '';
+                });
+            }, 1500);
+        }
+    }
+);
+
 </script>
 
 <template>

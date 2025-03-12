@@ -1,10 +1,13 @@
 <script setup>
-import { ref, onMounted, defineExpose, defineEmits } from 'vue';
+import { ref, onMounted, defineExpose, defineEmits, watch } from 'vue';
+import { useRecorderStore } from '@/stores/useRecorderStore';
 
 const numerator = ref('');
 const denominator = ref('');
 const numeratorInput = ref(null); 
 const denominatorInput = ref(null); 
+
+const recorderStore = useRecorderStore();
 
 const emits = defineEmits(['answerSent']); 
 
@@ -37,9 +40,25 @@ function handleKeydown(event) {
 const clearInput = () => {
     numerator.value = '';
     denominator.value = '';
+    
 }
 
 defineExpose({getAnswer, clearInput});
+
+watch(
+    () => [recorderStore.isRecording, recorderStore.student_answer],
+    ([isRecording, studentAnswer]) => {
+        if (isRecording && studentAnswer) {
+            numerator.value = studentAnswer.numerator;
+            denominator.value = studentAnswer.denominator;
+
+            setTimeout(() => {
+                numerator.value = '';
+                denominator.value = '';
+            }, 1500);
+        }
+    }
+);
 </script>
 
 <template>

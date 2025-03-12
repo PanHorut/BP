@@ -32,6 +32,11 @@ const clearInput = () => {
     
 };
 
+onMounted(() => {
+    console.log(examplesType.value);
+    examplesType.value = examplesType.value ?? 'classic';
+});
+
 </script>
 
 <template>

@@ -1,7 +1,10 @@
 <script setup>
-import {defineEmits, defineExpose, ref, onMounted} from 'vue';
+import {defineEmits, defineExpose, ref, onMounted, watch} from 'vue';
+import { useRecorderStore } from '@/stores/useRecorderStore';
 
 const emits = defineEmits(['answerSent']); 
+const recorderStore = useRecorderStore();
+
 const answer = ref('');
 const answerInput = ref(null);
 
@@ -24,15 +27,30 @@ const clearInput = () => {
 }
 
 defineExpose({getAnswer, clearInput});
+
+watch(
+    () => [recorderStore.isRecording, recorderStore.student_answer],
+    ([isRecording, studentAnswer]) => {
+        if (isRecording && studentAnswer) {
+            answer.value = studentAnswer;
+
+            setTimeout(() => {
+                answer.value = '';
+            }, 1500);
+        }
+    }
+);
 </script>
 
 <template>
+    <div class="flex items-center justify-center">
     <input
           type="text"
           v-model="answer"
-          class="text-start w-96 text-8xl border-none self-end p-0"
+          class="text-start w-96 text-8xl border-none self-end p-0 "
           ref="answerInput"
           @mouseover="handleMouseOver"
           placeholder="?"
         />
+        </div>
 </template>
