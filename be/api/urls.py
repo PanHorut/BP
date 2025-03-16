@@ -7,6 +7,8 @@ urlpatterns = [
     path('edit-task/', views.edit_task, name='edit-task'),
 
     path('skills/', views.SkillList.as_view(), name='skill-list'),
+    path('skills/<int:skill_id>/delete/', views.delete_skill, name='delete-skill'),
+
     path('get-all-skills/', views.get_all_skills, name='get-all-skills'),
     path('examples-skills/', views.ExampleSkillList.as_view(), name='example-skill-list'),
     path('parent-skills/', views.get_parent_skills, name='get-parent-skills'),

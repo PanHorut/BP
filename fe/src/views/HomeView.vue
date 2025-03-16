@@ -15,21 +15,21 @@ const router = useRouter();
   <Topics v-if="authStore.role != 'admin'"></Topics>
   <div v-else>
     <p class="text-4xl text-primary flex justify-center font-bold pt-16">
-      Vítejte na hlavní stránce DRILLOVAČKA
+      Vítejte na hlavní stránce
     </p>
-    
+
     <div class="flex flex-col items-center justify-center gap-8 pt-16">
-      <RouterLink 
-        to="/tasks" 
-        class="w-96 py-3 bg-primary text-white text-2xl font-medium border-2 border-primary rounded-lg shadow-md hover:bg-white hover:text-primary hover:border-primary transition-all text-center flex items-center justify-center">
-        Vytvořit příklady
+      <RouterLink to="/tasks" class="w-96 cursor-pointer border border-gray-300 rounded-lg shadow-lg max-w-md bg-white 
+           transition transform  hover:shadow-xl 
+           hover:bg-secondary hover:border-secondary flex items-center justify-center text-3xl text-center font-bold text-primary p-4 
+              duration-300 ease-in-out hover:text-white">
+        Příklady
       </RouterLink>
-      <RouterLink 
-        to="/skill-creator" 
-        class="w-96 py-3 bg-primary text-white text-2xl font-medium border-2 border-primary rounded-lg shadow-md hover:bg-white hover:text-primary hover:border-primary transition-all text-center flex items-center justify-center">
-        Vytvořit novou dovednost
+      <RouterLink to="/skill-creator" class="w-96 cursor-pointer border border-gray-300 rounded-lg shadow-lg max-w-md bg-white 
+           transition transform  hover:shadow-xl 
+           hover:bg-secondary hover:border-secondary flex items-center justify-center text-3xl text-center font-bold text-primary p-4 
+              duration-300 ease-in-out hover:text-white"> Dovednosti
       </RouterLink>
     </div>
   </div>
 </template>
-

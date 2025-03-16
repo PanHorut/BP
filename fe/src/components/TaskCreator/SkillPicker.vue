@@ -1,10 +1,9 @@
 <script setup>
-import { ref, defineEmits, defineProps, watch, onMounted } from 'vue'; // Make sure to import watch
+import { ref, defineEmits, defineProps, watch, onMounted } from 'vue'; 
 import { getLeafSkills } from '@/api/apiClient';
 
 const emit = defineEmits(['update:selectedItems']);
 
-// Props
 const props = defineProps({
   selectedItems: {
     type: Array,
@@ -12,17 +11,10 @@ const props = defineProps({
   }
 });
 
-
-
-
 const items = ref([])
-
-
-// State variables
 const isModalOpen = ref(false);
-const selectedItems = ref(props.selectedItems); // Initialize with selectedItems prop
+const selectedItems = ref(props.selectedItems); 
 
-// Watch for changes in selectedItems prop
 watch(() => props.selectedItems, (newVal) => {
   selectedItems.value = newVal;
 });
@@ -35,7 +27,7 @@ const clearSelection = () => {
 
 const applySelection = () => {
   isModalOpen.value = false;
-  emit('update:selectedItems', selectedItems.value); // Emit selected items to parent
+  emit('update:selectedItems', selectedItems.value); 
 };
 
 onMounted(async () => {
@@ -87,7 +79,6 @@ onMounted(async () => {
           </ul>
         </div>
   
-        <!-- Modal Footer with Actions -->
         <div class="flex justify-end mt-5 space-x-3">
           <button @click="clearSelection" class="px-4 py-2 bg-gray-200 text-gray-800 rounded">
             Vybrat vše

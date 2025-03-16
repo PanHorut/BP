@@ -32,7 +32,7 @@ const chartOptions = reactive({
     },
     {
       title: { text: 'Spočítaných příkladů za den' },
-      opposite: true // Right Y-axis
+      opposite: true 
     }
   ]
 });
@@ -41,11 +41,11 @@ const chartSeries = ref([]);
 
 const fetchData = async () => {
   try {
-    const studentId = 1; // Replace with dynamic value if needed
+    const studentId = 1;
     const avgDurationData = await getChartData(studentId, "duration");
     const countedExamplesData = await getChartData(studentId, "examples");
 
-    chartOptions.xaxis.categories = avgDurationData.categories; // Assuming both datasets share the same dates
+    chartOptions.xaxis.categories = avgDurationData.categories;
     chartSeries.value = [
       { name: "Průměrný čas počítání", data: avgDurationData.series[0].data, type: "line", yAxisIndex: 0 },
       { name: "Spočítaných příkladů", data: countedExamplesData.series[0].data, type: "line", yAxisIndex: 1 }
@@ -61,10 +61,10 @@ onMounted(fetchData);
 <template>
   <div v-if="authStore.isAuthenticated" class="w-full text-4xl text-primary flex flex-col items-center justify-center font-bold pt-12">
     <p>Ahoj {{ authStore.name }}!</p>
+    <!---
     <div class="w-full max-w-5xl px-4"> 
-      <!-- Increased width with max-w-5xl (80rem) -->
       <apexchart type="line" height="400" :options="chartOptions" :series="chartSeries"></apexchart>
-    </div>
+    </div> -->
   </div>
 
   <div v-else>

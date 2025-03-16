@@ -192,11 +192,12 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         def recognizing_cb(evt: speechsdk.SpeechRecognitionEventArgs):
             try:
                 if evt.result.text:
+
                     future = asyncio.run_coroutine_threadsafe(
                         self.message_queue.put(f"[interim] {evt.result.text}"),
                         self.loop
                     )
-                    future.result()  # Ensure processing
+                    future.result() 
             except Exception as e:
                 print(f"Error in recognizing callback: {e}")
 

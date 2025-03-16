@@ -2,7 +2,7 @@ import axios from 'axios';
 import qs from 'qs'; 
 
 const apiClient = axios.create({
-  baseURL:  'https://drillovacka.applikuapp.com/api/',// 'https://bp-production-37c0.up.railway.app/api/', // , //  'http://localhost:8000/api/'
+  baseURL:  'https://drillovacka.applikuapp.com/api/',// 'https://bp-production-37c0.up.railway.app/api/',     'http://localhost:8000/api/'
   headers: {
     //'Content-Type': 'application/json',
   },
@@ -251,6 +251,15 @@ export const getOperationSkills = async (skillId) => {
     console.error('Error fetching operation skills:', error);
   }
 }
+
+export const deleteSkill = async (skillId) => {
+  try {
+    const response = await apiClient.patch(`skills/${skillId}/delete/`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error deleting skill';
+  }
+};
 
 export const registerStudent = async (username, passphrase) => {
   try {

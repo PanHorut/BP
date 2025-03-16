@@ -81,7 +81,7 @@ watch(
                 type="text"
                 v-model="variable.answer"
                 @input="updateAnswers" 
-                class="text-start w-64 text-8xl border-none self-end p-0"
+                class="text-start w-64 text-6xl md:text-8xl border-none self-end p-0"
                 placeholder="?"
                 autofocus
             />

@@ -24,7 +24,7 @@ def generate_gemini_response(prompt):
         return str(e)  
 
 if __name__ == "__main__":
-    audio_prompt = AudioPrompt.objects.get(id=2)
+    audio_prompt = AudioPrompt.objects.get(id=1)
     print(audio_prompt.transcription)
 
     #answer = generate_gemini_response("Hello my friend, how are you today?")

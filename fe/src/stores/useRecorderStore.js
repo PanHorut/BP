@@ -26,7 +26,7 @@ export const useRecorderStore = defineStore("recorder", () => {
   const startRecording = async () => {
     try {
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        ws = new WebSocket("wss://drillovacka.applikuapp.com/ws/speech/"); //    "ws://localhost:8000/ws/speech/"
+        ws = new WebSocket("wss://drillovacka.applikuapp.com/ws/speech/"); //  "ws://localhost:8000/ws/speech/"
         ws.onopen = () => {
           console.log("WebSocket connection opened.");
           sendExampleData();
@@ -65,7 +65,13 @@ export const useRecorderStore = defineStore("recorder", () => {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+      const audioContext = new AudioContext({ sampleRate: 16000 }); // Set sample rate to 16kHz
+      const source = audioContext.createMediaStreamSource(stream);
+      const destination = audioContext.createMediaStreamDestination();
+
+      // Connect the source to the destination
+      source.connect(destination);
+      mediaRecorder = new MediaRecorder(destination.stream, { mimeType: "audio/webm;codecs=opus" });
 
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0 && ws?.readyState === WebSocket.OPEN) {
@@ -75,7 +81,7 @@ export const useRecorderStore = defineStore("recorder", () => {
         }
       };
 
-      mediaRecorder.start(100);
+      mediaRecorder.start(200);
       isRecording.value = true;
     } catch (error) {
       console.error("Error accessing microphone:", error);

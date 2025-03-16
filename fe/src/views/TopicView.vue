@@ -77,7 +77,7 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center pt-20">
+  <div class="flex flex-col items-center md:pt-20">
     <h1 class="text-5xl font-bold text-primary my-8" v-if="topic">
       {{ topic.name }}
     </h1>
@@ -86,20 +86,21 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
     <Spinner v-if="loading" class="mt-24" />
 
     <!-- Render operations as buttons using the new component -->
-    <p v-if="operations.length > 0" class="text-secondary text-xl mb-4">Vyber si operace, které chceš procvičit</p>
-    <div v-if="operations.length > 0" class="flex gap-4 mb-4">
+    <p v-if="operations.length > 0" class="text-secondary font-semibold text-xl mt-8 mb-4">Vyber operace, které chceš procvičit</p>
+    <div v-if="operations.length > 0" class="grid grid-cols-2 gap-4 mb-4 md:flex md:flex-row md:flex-wrap md:space-x-4 md:justify-start justify-center">
       <OperationButton 
         v-for="operation in operations" 
         :key="operation.id" 
         :operation="operation"
         :selectedSubtopics="selectedSubtopics"
         @updateExampleCount="updateExampleCount"
+        class="md:w-auto w-full"
 
       />
     </div>
 
-    <p v-if="subtopics.length > 0" class="text-secondary text-xl mt-8">Jaké příklady chceš procvičit? </p>
-    <div v-if="subtopics.length > 0" class="flex">
+    <p v-if="subtopics.length > 0" class="text-secondary font-semibold text-xl mt-8 mb-4">Jaké příklady chceš procvičit? </p>
+    <div v-if="subtopics.length > 0" class="flex flex-col md:flex-row ">
       <SubTopic
         v-for="subtopic in subtopics"
         :key="subtopic.id"
@@ -108,7 +109,7 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
       />
     </div>
 
-    <div @click="startPractice" class="mt-6 px-6 py-3 bg-secondary text-xl font-bold text-white rounded-lg cursor-pointer hover:bg-primary transition">
+    <div @click="startPractice" class="my-20 px-6 py-3 bg-secondary text-4xl md:text-3xl font-bold text-white rounded-lg cursor-pointer hover:bg-primary transition">
       JDEME NA TO
     </div>
   </div>

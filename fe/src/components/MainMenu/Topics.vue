@@ -12,9 +12,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <Spinner v-if="topicStore.loading" class="mt-48" />
+  <Spinner v-if="topicStore.loading" class="pt-48" />
 
-  <div class="flex justify-center pt-40">
+  <div class="flex justify-center py-20 md:pt-40">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-x-20 gap-y-10">
       <TopicCard 
         v-for="(topic, index) in topicStore.topics" 

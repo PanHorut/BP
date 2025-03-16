@@ -40,19 +40,29 @@ const removeChildrenFromSelection = (subskills) => {
     }
   });
 }
+
+const getCorrectForm = (count) => {
+  if (count === 1) {
+    return 'příklad';
+  } else if (count > 1 && count < 5) {
+    return 'příklady';
+  } else {
+    return 'příkladů';
+  }
+}
 </script>
 
 <template>
-  <div v-if="subtopic" class="subtopic pl-4 my-4">
+  <div v-if="subtopic" class="pl-4 my-4">
     <div class="flex items-center justify-between mb-2">
       <label class="flex items-center space-x-2">
         <input 
           type="checkbox" 
           v-model="isSelected" 
-          class="h-6 w-6 rounded text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500"
+          class="h-8 w-8  rounded text-primary border-gray-500 focus:ring-2 focus:ring-primary"
         />
         <span class="font-medium text-2xl">{{ subtopic.name }}</span>
-        <span class="text-lg text-gray-500">({{ subtopic.examples }} příkladů)</span>
+        <span class="text-lg text-gray-500">({{ subtopic.examples }} {{ getCorrectForm(subtopic.examples) }})</span>
       </label>
     </div>
 

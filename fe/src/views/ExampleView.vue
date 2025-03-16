@@ -7,6 +7,8 @@ import { useRoute } from 'vue-router';
 import { getExamples } from '@/api/apiClient';
 import correctIcon from '@/assets/img/correct.png';
 import wrongIcon from '@/assets/img/wrong.png'
+import correctSoundSrc from '@/assets/audio/correct.mp3';
+import wrongSoundSrc from '@/assets/audio/wrong.mp3';
 import Spinner from '@/components/Spinner.vue';
 import Summary from '@/components/Example/Summary.vue';
 import { useRecorderStore } from '@/stores/useRecorderStore';
@@ -38,7 +40,10 @@ const showSummary = ref(false);
 
 const recorderStore = useRecorderStore();
 
-const preloadImages = () => {
+const correctSound = new Audio(correctSoundSrc);
+const wrongSound = new Audio(wrongSoundSrc);
+
+const preloadMedia = () => {
   const correct = new Image();
   const wrong = new Image();
 
@@ -77,13 +82,16 @@ const displayNext = async (data) => {
       isSkipped.value = true;
     } 
     else if (data.isCorrect) {
+      correctSound.play();
       displayIcon(true);
     } 
     else if (!data.isCorrect && data.nextExample) {
+      wrongSound.play();  
       displayIcon(false);
       mistakes.value++;
     } 
     else {
+      wrongSound.play();
       displayIcon(false);
       mistakes.value++;
       exampleComponent.value.getStep(mistakes.value)
@@ -143,7 +151,7 @@ const displaySummary = () => {
 };
 
 onMounted(() => {
-  preloadImages();
+  preloadMedia();
 
   if (route.query.topics) {
       topics.value = JSON.parse(route.query.topics);
@@ -163,7 +171,7 @@ onMounted(() => {
              
       <Example ref="exampleComponent" v-if="examples.length > curr_index && !showSummary" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
       <img v-if="examples.length > curr_index"   :src="isCorrect ? images.correct.src : images.wrong.src" 
-      class="w-48 h-48 absolute t-50" :class="showIcon ? '' : 'hidden'" >
+      class="w-48 h-48 absolute top-64 z-50" :class="showIcon ? '' : 'hidden'" >
 
       
       <Summary v-if="showSummary" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes"></Summary>

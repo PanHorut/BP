@@ -40,6 +40,9 @@ def examples_with_skills(skill_ids):
 def build_skill_tree(skill, visited=None, skill_ids=None, related_skills=None, withCounts=None):
     if visited is None:
         visited = set()
+
+    if related_skills is None:
+        related_skills = set()
     
     # to avoid infinite loops
     if skill.id in visited:
@@ -70,9 +73,9 @@ def build_skill_tree(skill, visited=None, skill_ids=None, related_skills=None, w
         "examples": examples_count,
         "subskills": [
             build_skill_tree(child, visited, skill_ids.copy(), related_skills)
-            for child in children if child in related_skills 
+            for child in children if related_skills and child in related_skills
         ]
-    }
+        }
 
 
 # get skill paths from skill list 

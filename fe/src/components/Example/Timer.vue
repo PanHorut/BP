@@ -40,7 +40,7 @@ const formattedTime = computed(() => {
 
 <template>
   <div class="p-4">
-    <p v-if="timeElapsed !== null" class="mt-4 text-3xl font-semibold text-center">
+    <p v-if="timeElapsed !== null" class="text-2xl md:text-3xl font-semibold text-center">
       {{formattedTime}}
     </p>
   </div>

@@ -18,7 +18,7 @@ const progress = computed(() => {
 </script>
 
 <template>
-    <div class="w-full max-w-md mx-auto pt-10">
+    <div class="  w-5/6 md:w-full max-w-md mx-auto pt-20">
       <!-- Progress Bar Container -->
       <div class="bg-gray-200 rounded-full h-6">
         <div
@@ -28,7 +28,7 @@ const progress = computed(() => {
       </div>
   
       <!-- Progress Label -->
-      <div class="flex justify-center text-3xl font-semibold mt-2">
+      <div class="flex justify-center text-xl md:text-3xl font-semibold mt-2">
         
         <span>{{ finishedExamples }} / {{ totalExamples }}</span>
         

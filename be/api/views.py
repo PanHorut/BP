@@ -32,7 +32,6 @@ def create_skill_relations(skill_ids):
     skills = Skill.objects.filter(id__in=skill_ids)
 
     for skill in skills:
-        # Get skills that are NOT the same and have a DIFFERENT skill_type
         related_skills = [s for s in skills if s != skill and s.skill_type != skill.skill_type]
         skill.related_skills.add(*related_skills)  
 
@@ -216,21 +215,21 @@ def edit_task(request):
 
 @api_view(['GET'])
 def get_all_skills(request):
-    skills = Skill.objects.all()
+    skills = Skill.objects.filter(deleted=False)
     serializer = SkillSerializer(skills, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def get_parent_skills(request):
 
-    parent_skills = Skill.objects.filter(parent_skill__isnull=True)
+    parent_skills = Skill.objects.filter(parent_skill__isnull=True, deleted=False)
     serializer = SkillSerializer(parent_skills, many=True)
     
     return Response(serializer.data, status=200)
 
 @api_view(['GET'])
 def get_leaf_skills(request):
-    leaf_skills = Skill.objects.filter(subskills__isnull=True)
+    leaf_skills = Skill.objects.filter(subskills__isnull=True, deleted=False)
     
     serializer = SkillSerializer(leaf_skills, many=True)
     
@@ -241,9 +240,12 @@ def get_skill(request, skill_id):
     try:
     
         skill = Skill.objects.get(id=skill_id)
+
+        if skill.deleted == True:
+            return Response({"error": "Skill not found"}, status=status.HTTP_404_NOT_FOUND)
+        
         skill_data = SkillSerializer(skill).data
     
-        
         return Response(skill_data, status=status.HTTP_200_OK)
     except Skill.DoesNotExist:
         return Response({"error": "Skill not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -263,14 +265,12 @@ def get_examples(request):
     except json.JSONDecodeError:
         return Response({"error": "Invalid JSON format for topics"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Assuming get_skill_paths returns an array like [[65, 69, 70], [66, 69, 70]]
     skill_paths = get_skill_paths(topics_data)
     print(skill_paths)
     example_data = []
 
-    # For each skill path (e.g., [65, 69, 70]), filter the examples
     for path in skill_paths:
-        # First, find all examples that have *at least* one skill in the path
+
         examples = Example.objects.filter(
             exampleskill__skill__id__in=path
         ).distinct()
@@ -413,7 +413,6 @@ def skip_example(request):
 
 @api_view(['GET'])
 def get_tasks(request):
-    # Prefetch related data for optimization
     example_skills = Prefetch('exampleskill_set', queryset=ExampleSkill.objects.select_related('skill'))
     example_steps = Prefetch('steps', queryset=Step.objects.order_by('order'))  # Order by 'order' field
 
@@ -422,7 +421,7 @@ def get_tasks(request):
         'example_set__exampleskill_set', # Prefetch related ExampleSkills
         'example_set__steps'          # Prefetch related Steps
     )
-
+    
     # Prepare the response data
     data = [
         {
@@ -466,7 +465,7 @@ def get_tasks(request):
         }
         for task in tasks
     ]
-
+    
     # Return the data as JSON
     return JsonResponse(data, safe=False)
 
@@ -528,8 +527,7 @@ def create_skill(request):
     try:
         # Extract data from the request
         name = request.data.get('name')
-        parent_skill_id = request.data.get('parent_skill') 
-        
+        parent_skill_id = request.data.get('parent_skill')
 
         if not name:
             return Response({"error": "Skill name is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -542,27 +540,50 @@ def create_skill(request):
             parent_skill = get_object_or_404(Skill, id=parent_skill_id)
             skill_type = parent_skill.skill_type  
             height = get_height(parent_skill_id) + 1
+        else:
+            height = 0  # Set a default height if there's no parent skill
+
+        # Check if a skill with the same name already exists and is not deleted
+        existing_skill = Skill.objects.filter(name=name, deleted=True).first()
         
-        # Create the new skill
-        with transaction.atomic():  # Ensure transactional consistency
-            
-            skill = Skill.objects.create(name=name, parent_skill=parent_skill, skill_type=skill_type, height=height)
-            
-        # Serialize and return the created skill data
-        return JsonResponse({
-            "id": skill.id,
-            "name": skill.name,
-            "parent_skill": skill.parent_skill.id if skill.parent_skill else None,
-            "skill_type": skill.skill_type,  # Include skill_type in response
-        }, status=status.HTTP_201_CREATED)
+        if existing_skill:
+            # If a deleted skill exists with the same name, restore it by setting deleted to False
+            existing_skill.deleted = False
+            existing_skill.save()
+
+            # Return the restored skill data
+            return JsonResponse({
+                "id": existing_skill.id,
+                "name": existing_skill.name,
+                "parent_skill": existing_skill.parent_skill.id if existing_skill.parent_skill else None,
+                "skill_type": existing_skill.skill_type,  # Include skill_type in response
+            }, status=status.HTTP_200_OK)
+        else:
+            # If no deleted skill exists, create a new skill
+            with transaction.atomic():  # Ensure transactional consistency
+                skill = Skill.objects.create(
+                    name=name, 
+                    parent_skill=parent_skill, 
+                    skill_type=skill_type, 
+                    height=height
+                )
+
+            # Return the created skill data
+            return JsonResponse({
+                "id": skill.id,
+                "name": skill.name,
+                "parent_skill": skill.parent_skill.id if skill.parent_skill else None,
+                "skill_type": skill.skill_type,  # Include skill_type in response
+            }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
         # Handle any unexpected errors
         return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 @api_view(['GET'])
 def get_skill_tree(request):
-    skills = Skill.objects.all()
+    skills = Skill.objects.filter(deleted=False)
     skill_list = SkillSerializer(skills, many=True).data
 
     # Convert the flat list into a hierarchical structure
@@ -595,10 +616,11 @@ def search_skills(request):
     if query:
         skills = Skill.objects.filter(
             name__icontains=query, 
-            parent_skill=parent_skill  
+            parent_skill=parent_skill,
+            deleted=False  
         )
     else:
-        skills = Skill.objects.filter(parent_skill=parent_skill)
+        skills = Skill.objects.filter(parent_skill=parent_skill, deleted=False)
 
     skill_list = SkillSerializer(skills, many=True).data
 
@@ -607,12 +629,13 @@ def search_skills(request):
 
 @api_view(['GET'])
 def get_landing_page_skills(request):
+    existing_skills = Skill.objects.filter(deleted=False)
 
-    skills_with_height = Skill.objects.filter(height__lte=3)
+    skills_with_height = existing_skills.filter(height__lte=3)
 
     leaf_skills = skills_with_height.filter(subskills__isnull=True)
-    
-    skills_with_height_3 = Skill.objects.filter(height=3)
+
+    skills_with_height_3 = existing_skills.filter(height=3)
 
     skills = (leaf_skills | skills_with_height_3).distinct()
 
@@ -623,12 +646,12 @@ def get_landing_page_skills(request):
 @api_view(['GET'])
 def get_related_skills_tree(request, skill_id):
     try:
-        main_skill = Skill.objects.get(id=skill_id)  # Get the selected skill
+        main_skill = Skill.objects.get(id=skill_id, deleted=False)  # Get the selected skill
         visited = set()  # Track visited nodes to avoid infinite recursion
         tree = []
 
         # Get all directly related skills
-        related_skills = main_skill.related_skills.all()
+        related_skills = main_skill.related_skills.filter(deleted=False)    
 
         # Build tree structure by ensuring parent-child hierarchy
         for skill in related_skills:
@@ -648,21 +671,22 @@ def get_children_skills_tree(request, skill_id):
     print(withCounts)
 
     try:
-        main_skill = Skill.objects.get(id=skill_id)  # Get the selected skill
-        visited = set()  # Track visited nodes to avoid infinite recursion
+        main_skill = Skill.objects.get(id=skill_id)  
+
+        if main_skill.deleted:
+            return Response({"error": "Skill not found"}, status=404)   
+        visited = set()  
         tree = []
 
-        # Get all directly related child skills (children of the skill_id)
-        children = Skill.objects.filter(parent_skill=main_skill)
+        children = Skill.objects.filter(parent_skill=main_skill, deleted=False)
 
-        # Build tree structure for the given skill and its children
         for skill in children:
             if skill.id not in visited:
-                subtree = build_skill_tree(skill, visited, None, None, withCounts)  # Use your existing tree-building logic
+                subtree = build_skill_tree(skill, visited, None, None, withCounts) 
                 if subtree:
                     tree.append(subtree)
 
-        return Response(tree)  # Return JSON tree response
+        return Response(tree)  
     except Skill.DoesNotExist:
         return Response({"error": "Skill not found"}, status=404)
 
@@ -671,13 +695,13 @@ def get_operation_skills(request, skill_id):
     try:
         main_skill = get_object_or_404(Skill, id=skill_id)
 
-        # Get children of the main skill
-        children_skills = main_skill.subskills.all()
+        if main_skill.deleted:
+            return Response({"error": "Skill not found"}, status=404)
 
-        # Get related operation skills of the main skill
-        related_operation_skills = main_skill.related_skills.filter(skill_type='OPERATION')
+        children_skills = main_skill.subskills.filter(deleted=False)
 
-        # Prepare response data
+        related_operation_skills = main_skill.related_skills.filter(skill_type='OPERATION', deleted=False)
+
         skills_data = []
 
         for operation_skill in related_operation_skills:
@@ -707,6 +731,37 @@ def get_operation_skills(request, skill_id):
     
     except Skill.DoesNotExist:
         return Response({"error": "Skill not found"}, status=404)
+
+@api_view(['PATCH'])
+def delete_skill(request, skill_id):
+    try:
+        skill = Skill.objects.get(id=skill_id)
+        
+        # Mark the skill as deleted
+        skill.deleted = True
+        skill.save()
+        
+        # Delete all ExampleSkill relations with this skill
+        ExampleSkill.objects.filter(skill=skill).delete()
+        
+        # Remove this skill from all Task's skills (many-to-many relationship)
+        for task in Task.objects.filter(skills=skill):
+            task.skills.remove(skill)
+        
+        # Remove this skill from all related_skills (many-to-many relationship)
+        for related_skill in skill.related_skills.all():
+            skill.related_skills.remove(related_skill)
+        
+        return Response(
+            {"message": f"Skill '{skill.name}' marked as deleted and all relations removed."},
+            status=status.HTTP_200_OK
+        )
+        
+    except Skill.DoesNotExist:
+        return Response(
+            {"error": "Skill not found."},
+            status=404
+        )
 
 @api_view(['POST'])
 def register_student(request):

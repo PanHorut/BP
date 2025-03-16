@@ -1,36 +1,43 @@
 <script setup>
 import { RouterLink, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 // Auth Store
 const authStore = useAuthStore();
 const router = useRouter();
 
-// Determine Active Link
-const isActiveLink = (routePath) => {
-  const route = useRoute();
-  return route.path === routePath;
-};
-
 // Computed Property for Auth State
 const isAuthenticated = computed(() => authStore.isAuthenticated);
+
+// Mobile Menu State
+const isMenuOpen = ref(false);
 </script>
 
 <template>
-  <nav class="bg-primary shadow">
-    <div class=" px-2 sm:px-6 lg:px-9">
+  <nav class="bg-primary shadow relative z-50">
+    <div class="px-4 sm:px-6 lg:px-9">
       <div class="flex h-20 items-center justify-between">
-        <!-- Left: Brand/Logo -->
+        <!-- Left: Logo (Switches on small screens) -->
         <div class="flex items-center">
-          <RouterLink to="/" class="text-4xl font-black tracking-wide text-white">
-            DRILLOVAČKA
+          <RouterLink to="/">
+            <!-- Logo: Icon for mobile, text for md+ -->
+            <img src="/app.ico" alt="App Logo" class="w-14 h-14 md:hidden" />
+            <h1 class="text-4xl font-black tracking-wide text-white hidden md:block">DRILLOVAČKA</h1>
           </RouterLink>
         </div>
 
-        <div class="flex items-center justify-end space-x-8 text-2xl font-semibold">
-          <!-- If Not Logged In -->
+        <!-- Mobile Menu Button -->
+        <button @click="isMenuOpen = !isMenuOpen"
+          class="md:hidden text-white text-5xl focus:outline-none transition-transform duration-300"
+          :class="isMenuOpen ? 'rotate-180' : 'rotate-0'">
+          <i class="fa-solid transition-transform duration-300" 
+            :class="isMenuOpen ? 'fa-times scale-110' : 'fa-bars scale-100'"></i>
+        </button>
+
+        <!-- Desktop Menu -->
+        <div class="hidden md:flex items-center space-x-8 text-2xl font-semibold">
           <template v-if="!isAuthenticated">
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Přihlásit se</RouterLink>
           </template>
@@ -38,17 +45,44 @@ const isAuthenticated = computed(() => authStore.isAuthenticated);
           <template v-else-if="authStore.role == 'admin'">
             <RouterLink to="/tasks" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Příklady</RouterLink>
             <RouterLink to="/skill-creator" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Dovednosti</RouterLink>
-
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Odhlásit se</button> 
           </template>
 
-          <!-- If Logged In -->
           <template v-else>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Můj účet</RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Odhlásit se</button>
           </template>
         </div>
       </div>
+
+      <!-- Mobile Menu (Dropdown) -->
+      <transition name="fade">
+        <div v-if="isMenuOpen" class="md:hidden flex flex-col items-center bg-primary text-white py-4 space-y-4 text-xl">
+          <template v-if="!isAuthenticated">
+            <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Přihlásit se</RouterLink>
+          </template>
+
+          <template v-else-if="authStore.role == 'admin'">
+            <RouterLink to="/tasks" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Příklady</RouterLink>
+            <RouterLink to="/skill-creator" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Dovednosti</RouterLink>
+            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">Odhlásit se</button> 
+          </template>
+
+          <template v-else>
+            <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Můj účet</RouterLink>
+            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">Odhlásit se</button>
+          </template>
+        </div>
+      </transition>
     </div>
   </nav>
 </template>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+</style>

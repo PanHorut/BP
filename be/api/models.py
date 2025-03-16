@@ -41,6 +41,7 @@ class Answer(models.Model):
 class Skill(models.Model):
     name = models.CharField(max_length=255)
     height = models.IntegerField(default=0) 
+    deleted = models.BooleanField(default=False)
     parent_skill = models.ForeignKey(
         'self',                  
         null=True,               

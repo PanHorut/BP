@@ -69,11 +69,11 @@ watch(
             ref="numeratorInput"
             @keydown="handleKeydown"
             @mouseover="handleMouseOver(numeratorInput)"
-            class="text-start w-48 text-8xl border border-gray-300 self-end p-0"
+            class="text-start w-32 md:w-48 text-6xl md:text-8xl border border-gray-300 self-end p-0"
             placeholder="?"
         />
     
-        <hr class="w-48 my-2 bg-black border-black border-2 ">
+        <hr class="w-32 md:w-48 my-2 bg-black border-black border-2 ">
         
         <input
             type="text"
@@ -81,7 +81,7 @@ watch(
             ref="denominatorInput"
             @keydown="handleKeydown"
             @mouseover="handleMouseOver(denominatorInput)"
-            class="text-start w-48 text-8xl border border-gray-300 self-end p-0"
+            class="text-start w-32 md:w-48 text-6xl md:text-8xl border border-gray-300 self-end p-0"
             placeholder="?"
         />    
     </div>

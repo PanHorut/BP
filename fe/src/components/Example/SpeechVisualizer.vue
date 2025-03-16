@@ -187,7 +187,7 @@ const stopVisualization = () => {
 </script>
 
 <template>
-  <div class="audio-visualizer-container">
+  <div class="my-4 flex justify-center">
     <canvas 
       ref="canvasRef" 
       :width="width" 
@@ -196,10 +196,3 @@ const stopVisualization = () => {
   </div>
 </template>
 
-<style scoped>
-.audio-visualizer-container {
-  margin: 1rem 0;
-  display: flex;
-  justify-content: center;
-}
-</style>

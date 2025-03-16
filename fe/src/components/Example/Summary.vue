@@ -51,103 +51,81 @@ const percentages = computed(() => {
 </script>
 
 <template>
-    <div class="flex flex-col items-center justify-center mt-24 border-4 border-secondary rounded-xl px-24 py-4">
-        <h1 class="text-6xl font-bold text-primary">Hotovo!</h1>
-        <h2 class="text-2xl font-semibold text-primary text-center mt-4">Spočítal jsi {{ total }} {{ getCorrectForm }}</h2>
+    <div class="flex flex-col items-center justify-center mt-12 md:mt-24 border-4 border-secondary rounded-xl px-12 md:px-24 py-4 max-w-full">
+        <h1 class="text-5xl md:text-6xl font-bold text-primary">Hotovo!</h1>
+        <h2 class="text-lg md:text-2xl font-semibold text-primary text-center mt-4">
+            Spočítal jsi {{ total }} {{ getCorrectForm }}
+        </h2>
 
         <!-- Multiple Value Bar -->
-        <div class="w-full max-w-3xl h-12 flex rounded-full overflow-hidden mt-12">
+        <div class="w-full md:max-w-3xl h-8 md:h-12 flex rounded-full overflow-hidden mt-8 md:mt-12">
             <!-- Skipped -->
             <div 
-                class="bg-gray-400 h-full tooltip" 
+                class="bg-gray-400 h-full" 
                 :style="{ width: percentages.skipped + '%' }"
                 data-tooltip="Přeskočeno: {{ props.skipped }}"
             ></div>
             
             <!-- No Mistakes -->
             <div 
-                class="bg-green-500 h-full tooltip" 
+                class="bg-green-500 h-full" 
                 :style="{ width: percentages.noMistakes + '%' }"
                 data-tooltip="Bez chyb: {{ props.noMistakes }}"
             ></div>
 
             <!-- One Mistake -->
             <div 
-                class="bg-yellow-400 h-full tooltip" 
+                class="bg-yellow-400 h-full" 
                 :style="{ width: percentages.oneMistake + '%' }"
                 data-tooltip="Jedna chyba: {{ props.oneMistake }}"
             ></div>
 
             <!-- Two Mistakes -->
             <div 
-                class="bg-orange-400 h-full tooltip" 
+                class="bg-orange-400 h-full " 
                 :style="{ width: percentages.twoMistakes + '%' }"
                 data-tooltip="Dvě chyby: {{ props.twoMistakes }}"
             ></div>
 
             <!-- Three Mistakes -->
             <div 
-                class="bg-red-500 h-full tooltip" 
+                class="bg-red-500 h-full" 
                 :style="{ width: percentages.threeMistakes + '%' }"
                 data-tooltip="Tři chyby: {{ props.threeMistakes }}"
             ></div>
         </div>
 
         <!-- Legend -->
-        <div class="flex justify-center space-x-4 mt-4">
-            <div v-if="props.skipped > 0" class="flex items-center">
-                <span class="block w-4 h-4 bg-gray-400 rounded-full"></span>
-                <span class="ml-2">Přeskočeno ({{ props.skipped }})</span>
+        <div class="grid grid-cols-1 md:flex md:justify-center md:space-x-4 mt-4 text-lg font-medium md:text-base">
+            <div v-if="props.skipped > 0" class="flex items-center space-x-2">
+                <span class="block w-3 h-3 md:w-4 md:h-4 bg-gray-400 rounded-full"></span>
+                <span>Přeskočeno ({{ props.skipped }})</span>
             </div>
-            <div v-if="props.noMistakes > 0" class="flex items-center">
-                <span class="block w-4 h-4 bg-green-500 rounded-full"></span>
-                <span class="ml-2">Bez chyby ({{ props.noMistakes }})</span>
+            <div v-if="props.noMistakes > 0" class="flex items-center space-x-2">
+                <span class="block w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full"></span>
+                <span>Bez chyby ({{ props.noMistakes }})</span>
             </div>
-            <div v-if="props.oneMistake > 0" class="flex items-center">
-                <span class="block w-4 h-4 bg-yellow-400 rounded-full"></span>
-                <span class="ml-2">Jedna chyba ({{ props.oneMistake }})</span>
+            <div v-if="props.oneMistake > 0" class="flex items-center space-x-2">
+                <span class="block w-3 h-3 md:w-4 md:h-4 bg-yellow-400 rounded-full"></span>
+                <span>Jedna chyba ({{ props.oneMistake }})</span>
             </div>
-            <div v-if="props.twoMistakes > 0" class="flex items-center">
-                <span class="block w-4 h-4 bg-orange-400 rounded-full"></span>
-                <span class="ml-2">Dvě chyby ({{ props.twoMistakes }})</span>
+            <div v-if="props.twoMistakes > 0" class="flex items-center space-x-2">
+                <span class="block w-3 h-3 md:w-4 md:h-4 bg-orange-400 rounded-full"></span>
+                <span>Dvě chyby ({{ props.twoMistakes }})</span>
             </div>
-            <div v-if="props.threeMistakes > 0" class="flex items-center">
-                <span class="block w-4 h-4 bg-red-500 rounded-full"></span>
-                <span class="ml-2">Tři chyby ({{ props.threeMistakes }})</span>
+            <div v-if="props.threeMistakes > 0" class="flex items-center space-x-2">
+                <span class="block w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded-full"></span>
+                <span>Tři chyby ({{ props.threeMistakes }})</span>
             </div>
         </div>
 
-        <div class="flex justify-center mt-16 mb-6">
-            <RouterLink to="/" class="text-center text-3xl bg-secondary hover:bg-white text-white hover:text-secondary border-4 border-secondary rounded-xl font-semibold px-4 py-2 cursor-pointer transition">
+        <div class="flex justify-center mt-12 md:mt-16 mb-6 w-full">
+            <RouterLink 
+                to="/" 
+                class="text-center text-xl md:text-3xl bg-secondary hover:bg-white text-white hover:text-secondary border-4 border-secondary rounded-xl font-semibold px-3 py-2 md:px-4 md:py-2 cursor-pointer transition"
+            >
                 Zpět na hlavní stránku
             </RouterLink>
         </div>
     </div>
 </template>
-
-<style scoped>
-.tooltip {
-    position: relative;
-    cursor: pointer;
-}
-
-.tooltip::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: black;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-}
-
-.tooltip:hover::after {
-    opacity: 1;
-}
-</style>

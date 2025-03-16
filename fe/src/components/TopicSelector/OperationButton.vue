@@ -39,14 +39,14 @@ const removeFromSelection = (subtopic) => {
 
 // Computed styles
 const buttonClasses = computed(() => ({
-  'text-white bg-primary border-primary shadow-lg transform scale-105': isSelected.value,
+  'text-white bg-primary border-primary shadow-lg font-semibold transform scale-105': isSelected.value,
   'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300': !isSelected.value,
-  'px-5 py-3 rounded-full border transition-all duration-200 ease-in-out': true
+  'px-5 py-3 rounded-full border transition-all': true
 }));
 </script>
 
 <template>
-  <button @click="select" :class="buttonClasses" class="hover:shadow-md active:scale-95">
+  <button @click="select" :class="buttonClasses" class="hover:shadow-md active:scale-95 text-xl">
     {{ operation.name }}
   </button>
 </template>

@@ -47,7 +47,7 @@ watch(
     <input
           type="text"
           v-model="answer"
-          class="text-start w-96 text-8xl border-none self-end p-0 "
+          class="text-start w-64 md:w-96 text-6xl md:text-8xl border-none self-end p-0 "
           ref="answerInput"
           @mouseover="handleMouseOver"
           placeholder="?"
