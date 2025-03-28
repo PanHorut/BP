@@ -2,7 +2,17 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 import math
 import re
+
 from .models import StudentExample, Example, Answer
+
+
+
+from be.settings import GEMINI_API_KEY
+import google.generativeai as genai
+genai.configure(api_key=GEMINI_API_KEY)
+
+class GeminiRateLimitError(Exception):
+    pass
 
 class AnswerChecker:
 
@@ -29,6 +39,29 @@ class AnswerChecker:
     @staticmethod
     def compareAnswers(student_answer, correct_answer):
         return math.isclose(correct_answer, student_answer, rel_tol=1e-9)
+    
+
+
+    def compareAnswersWithGemini(correct_answer, student_answer, prompt):
+        try:
+            model = genai.GenerativeModel("gemini-2.0-flash") # nebo asi vic accurate gemini-2.0-flash a gemini-1.5-flash se da fine-tunovat
+            response = model.generate_content(prompt)
+
+            if "quota" in response.text.lower() or "limit" in response.text.lower():
+                raise GeminiRateLimitError("API rate limit reached")
+
+            if(response.text.strip().lower() == "true"):
+                return True
+            else:
+                return False 
+        
+        except Exception as e:
+            # Detect rate limit specific exceptions
+            if "429" in str(e) or "quota" in str(e).lower():
+                raise GeminiRateLimitError("API rate limit reached")
+            else:
+                # For non-rate limit errors, re-raise the exception
+                raise 
         
 
 class InlineAnswerChecker(AnswerChecker):
@@ -162,8 +195,9 @@ class FractionSpeechAnswerChecker(AnswerChecker):
     @staticmethod
     def verifyAnswer(student_id, example_id, date, duration, student_answer):   
         correct_answer = Answer.objects.get(example_id=example_id).answer
-
+        print(student_answer)
         match = re.match(r"\\frac\{(\d+)\}\{(\d+)\}", correct_answer)
+        
         if match:
             correct_numerator = float(match.group(1).replace(',', '.'))
             correct_denominator = float(match.group(2).replace(',', '.'))
@@ -235,3 +269,35 @@ class VariableSpeechAnswerChecker(AnswerChecker):
         else:
             continue_with_next = VariableSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
             return (False, continue_with_next, student_values)
+
+class LLMAnswerChecker(AnswerChecker):
+    
+    @staticmethod
+    def verifyAnswer(student_id, example_id, date, duration, student_answer, input_type):
+        correct_answer = Answer.objects.get(example_id=example_id).answer
+        print(correct_answer)
+        
+        if input_type == "fraction":
+            prompt = f"""There is a math example with answer written in Latex: {correct_answer}, the user told the answer by voice in czech language: {student_answer}. 
+                         Is the users answer correct? Answer just true or false."""
+        elif input_type == "variable":
+            prompt = f"""Evaluate LaTeX math answer. 
+                        Correct answer in LaTeX: {correct_answer}
+                        User's Czech voice answer: {student_answer}
+
+                        Rules:
+                        - Match each variable name exactly
+                        - Compare all variable values
+                        - Case-sensitive comparison
+
+                        Respond only "true" or "false"."""
+
+
+        is_correct = LLMAnswerChecker.compareAnswersWithGemini(correct_answer, student_answer, prompt)
+            
+        if(is_correct):
+            continue_with_next = LLMAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
+            return (True, continue_with_next, "")
+        else:
+            continue_with_next = LLMAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+            return (False, continue_with_next, "")

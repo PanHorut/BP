@@ -74,7 +74,7 @@ watch(
 </script>
 
 <template>
-    <div>
+    <div class="flex flex-col items-end">
         <div v-for="(variable, index) in variables" :key="index" class="flex">
             <p class="flex items-center">{{ computed(() => `\\(${variable.key}\\)`)}} = </p>
             <input
@@ -83,6 +83,7 @@ watch(
                 @input="updateAnswers" 
                 class="text-start w-64 text-6xl md:text-8xl border-none self-end p-0"
                 placeholder="?"
+                inputmode="numeric"
                 autofocus
             />
         </div>

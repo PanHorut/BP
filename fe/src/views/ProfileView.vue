@@ -67,7 +67,7 @@ onMounted(fetchData);
     </div> -->
   </div>
 
-  <div v-else>
+  <div v-else class="pt-12">
     <Login v-if="showLogin" />
     <Signup v-else />
 

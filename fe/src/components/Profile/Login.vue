@@ -48,7 +48,7 @@
 </script>
 
 <template>
-  <div class="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-lg mt-12 mb-4">
+  <div class="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-lg mt-12 mb-4 ">
     <h2 class="text-4xl font-bold text-primary mb-16 text-center">Přihlášení</h2>
     <form @submit.prevent="handleLogin">
       <!-- Username Field -->
@@ -96,7 +96,7 @@
       </div>
 
       <!-- Error Message from Store -->
-      <p v-if="authStore.errorMessage" class="text-red-600 text-sm text-center">{{ authStore.errorMessage }}</p>
+      <p v-if="authStore.errorMessage" class="bg-red-600 text-white w-full rounded-md font-medium text-lg text-center my-4">{{ authStore.errorMessage }}</p>
 
       <!-- Submit Button -->
       <button type="submit" 

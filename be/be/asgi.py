@@ -9,21 +9,18 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from django.urls import path
 from api.consumers import SpeechRecognitionConsumer
-
+from api.consumersSurvey import SurveySpeechTranscriptionConsumer
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'be.settings')
 
-# Initialize Django before importing anything else that depends on it
 django.setup()
-
-# Now import websocket routes after Django is fully set up
-
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
         URLRouter([
-            path("ws/speech/", SpeechRecognitionConsumer.as_asgi()),  # WebSocket endpoint
+            path("ws/speech/", SpeechRecognitionConsumer.as_asgi()),  
+            path("ws/survey/", SurveySpeechTranscriptionConsumer.as_asgi()),
         ])
     ),
 })

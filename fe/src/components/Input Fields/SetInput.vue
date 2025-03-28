@@ -62,6 +62,7 @@ watch(() => props.answer, getVariables, { immediate: true });
                 @input="updateAnswers" 
                 class="text-start w-64 text-8xl border-none self-end p-0"
                 placeholder="?"
+                inputmode="numeric"
             />
         </div>
     </div>

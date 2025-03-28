@@ -957,3 +957,52 @@ def get_paths_for_sandbox(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['GET'])
+def get_skill_related_counts(request):
+    skill_id = request.GET.get('skill_id')
+
+    skill = get_object_or_404(Skill, id=skill_id)
+
+    task_count = Task.objects.filter(skills=skill).count()
+
+    example_count = ExampleSkill.objects.filter(skill=skill).count()
+
+    data = {
+        "task_count": task_count,
+        "example_count": example_count
+    }
+
+    return Response(data)
+
+from datetime import datetime
+import os
+SURVEY_DIR = "survey"
+os.makedirs(SURVEY_DIR, exist_ok=True)
+
+@api_view(['POST'])
+def save_survey_answer(request):
+    question_type = request.data.get('question_type')
+    question_text = request.data.get('question_text')
+    answer = request.data.get('answer')
+
+    if not question_type or not question_text or not answer:
+        return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
+    json_filename = f"{question_type}_{timestamp}.json"
+
+    json_filepath = os.path.join(SURVEY_DIR, json_filename)
+        
+
+    survey_question_data = {
+        "question_text": question_text,
+        "answer": answer,
+        "timestamp": timestamp
+    }
+
+    with open(json_filepath, "w", encoding="utf-8") as json_file:
+        json.dump(survey_question_data, json_file, indent=4, ensure_ascii=False)
+    
+    return Response(status=status.HTTP_200_OK)
+

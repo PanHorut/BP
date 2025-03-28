@@ -19,6 +19,9 @@ const childSkillInputs = ref({});
 
 const toastStore = useToastStore();
 
+
+const emit = defineEmits(['deleteSkill']);
+
 const toggleExpand = (id) => {
   expanded.value[id] = !expanded.value[id];
 };
@@ -76,25 +79,19 @@ const addSkill = async (parentSkill, isChild = false) => {
   }
 };
 
-const removeSkill = async (skillId) => {
-  try {
-    await deleteSkill(skillId);
-    const index = skills.value.findIndex(skill => skill.id === skillId);
-    toastStore.addToast({
-        message: `Dovednost byla smazána`,
-        type: 'success',
-        visible: true,
-    });
-    if (index !== -1) {
-      skills.value.splice(index, 1);
-    }
-  } catch (error) {
-    console.error('Error deleting skill:', error);
-  }
+const removeSkill = async (name, id) => {
+  emit('deleteSkill', name, id);  
+  
+};
+
+const removeChildSkill = (name, id) => {
+  emit('deleteSkill', name, id);
 };
 </script>
 
 <template>
+  
+
   <ul class="pl-4">
     <li v-for="skill in skills" :key="skill.id" class="mb-2">
       <div class="flex items-center justify-start bg-gray-100 p-2 rounded-lg shadow-sm">
@@ -115,14 +112,13 @@ const removeSkill = async (skillId) => {
           </button>
 
           <button v-if="skill.children && skill.children.length === 0 && !isAddingChild[skill.id]"
-            @click="removeSkill(skill.id)"
+            @click="removeSkill(skill.name, skill.id)"
             class="flex items-center justify-center w-6 h-6 ml-2 rounded-full bg-red-500 text-white font-bold text-sm hover:bg-red-600 shadow-md transition">
             <i class="fa-solid fa-times"></i>
           </button>
         </div>
       </div>
 
-      <!-- Child Input Field (Focused on Creation) -->
       <div v-if="isAddingChild[skill.id]" class="flex items-center gap-2 ml-6 mt-2">
         <input v-model="newSkillName[skill.id]" ref="childSkillInputs" v-focus
           :ref="el => childSkillInputs.value[skill.id] = el" @keyup.enter="addSkill(skill.id, true)"
@@ -131,6 +127,7 @@ const removeSkill = async (skillId) => {
         <button @click="addSkill(skill.id, true)"
           class="px-3 py-1 text-white bg-green-500 rounded-lg hover:bg-green-600 transition"><i
             class="fa-solid fa-check"></i></button>
+
         <button @click="isAddingChild[skill.id] = false"
           class="px-3 py-1 text-white bg-red-500 rounded-lg hover:bg-red-600 transition"><i
             class="fa-solid fa-xmark"></i></button>
@@ -138,7 +135,8 @@ const removeSkill = async (skillId) => {
 
       <!-- Show Children -->
       <SkillNode v-if="expanded[skill.id] && skill.children && skill.children.length" :skills="skill.children"
-        :parent="skill.id" class="ml-6 border-l-2 border-gray-300 pl-4 mt-2" />
+        :parent="skill.id" class="ml-6 border-l-2 border-gray-300 pl-4 mt-2" @deleteSkill="removeChildSkill" 
+        />
     </li>
 
     <!-- Show input when adding a new skill -->
@@ -162,4 +160,6 @@ const removeSkill = async (skillId) => {
       </button>
     </li>
   </ul>
+  
+  
 </template>

@@ -220,7 +220,12 @@ defineExpose({ getStep });
       <div class="flex flex-col">
 
         <div
-          :class="isWordProblem ? 'text-xl md:text-3xl flex flex-col items-center' : 'text-5xl md:text-8xl flex flex-col'">
+  :class="[
+    isWordProblem ? 'text-xl md:text-3xl flex flex-col items-center' : 'text-4xl md:text-7xl flex flex-col',
+    props.example.input_type == 'FRAC' ? 'text-5xl' : 'text-4xl'
+  ]"
+>
+
 
           <div class="flex items-center justify-center" :class="isWordProblem ? 'w-2/3 ' : 'w-full'">
             {{ isWordProblem ? example.example : renderedExample }}

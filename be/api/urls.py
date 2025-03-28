@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views 
 from .consumers import SpeechRecognitionConsumer
-
+from .consumersSurvey import SurveySpeechTranscriptionConsumer
 urlpatterns = [
     path('create-task/', views.create_task, name='create-task'),
     path('edit-task/', views.edit_task, name='edit-task'),
@@ -33,6 +33,8 @@ urlpatterns = [
     path('skills/<int:skill_id>/tree/children', views.get_children_skills_tree, name='children_skills_tree'),
     path('skills/<int:skill_id>/operations', views.get_operation_skills, name='operation_skills'),
     path('skills/paths/sandbox/', views.get_paths_for_sandbox, name='get-sandbox-paths'),
+    path('skills/related-counts/', views.get_skill_related_counts, name='get-skill-related-counts'),
+
 
 
     path('register/student', views.register_student, name='register_student'),
@@ -41,6 +43,8 @@ urlpatterns = [
 
     path('check-answer/', views.check_answer, name='check-answer'),
 
+    path('survey-answer/', views.save_survey_answer, name='save-survey-answer'),   
+
     path('chart-data/duration/', views.average_duration, name='average-duration'),   
     path('chart-data/examples/', views.counted_examples, name='counted-examples'),   
 
@@ -48,4 +52,6 @@ urlpatterns = [
 
 websocket_urlpatterns = [
     path('ws/speech/', SpeechRecognitionConsumer.as_asgi()),
+    path('ws/survey/', SurveySpeechTranscriptionConsumer.as_asgi()),
+
 ]

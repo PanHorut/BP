@@ -37,8 +37,8 @@ const handleLogin = async () => {
 </script>
 
 <template>
-    <div class="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-lg mt-12 mb-4">
-      <h2 class="text-4xl font-bold text-primary mb-16 text-center">Přihlášení</h2>
+    <div class="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-lg mb-4">
+      <h2 class="text-2xl font-bold text-primary mb-16 text-center">Přihlášení Administrátora</h2>
       <form @submit.prevent="handleLogin">
         <!-- Username Field -->
         <div class="mb-4">

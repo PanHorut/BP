@@ -1,8 +1,8 @@
 <script setup>
-import {defineEmits, defineExpose, ref, onMounted, watch} from 'vue';
+import { defineEmits, defineExpose, ref, onMounted, watch } from 'vue';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 
-const emits = defineEmits(['answerSent']); 
+const emits = defineEmits(['answerSent']);
 const recorderStore = useRecorderStore();
 
 const answer = ref('');
@@ -13,7 +13,7 @@ function getAnswer() {
 }
 
 onMounted(() => {
-    if (answerInput.value) {
+    if (answerInput.value && !recorderStore.isRecording) {
         answerInput.value.focus();
     }
 });
@@ -26,7 +26,7 @@ const clearInput = () => {
     answer.value = '';
 }
 
-defineExpose({getAnswer, clearInput});
+defineExpose({ getAnswer, clearInput });
 
 watch(
     () => [recorderStore.isRecording, recorderStore.student_answer],
@@ -44,13 +44,7 @@ watch(
 
 <template>
     <div class="flex items-center justify-center">
-    <input
-          type="text"
-          v-model="answer"
-          class="text-start w-64 md:w-96 text-6xl md:text-8xl border-none self-end p-0 "
-          ref="answerInput"
-          @mouseover="handleMouseOver"
-          placeholder="?"
-        />
-        </div>
+        <input v-model="answer" class="text-start w-64 md:w-96 text-6xl md:text-8xl border-none self-end p-0"
+            ref="answerInput" @mouseover="handleMouseOver" placeholder="?" inputmode="numeric" />
+    </div>
 </template>

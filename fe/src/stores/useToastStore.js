@@ -8,7 +8,7 @@ export const useToastStore = defineStore('toast', {
     addToast(toast) {
         this.toasts.push(toast);
         setTimeout(() => {
-          this.removeToast(this.toasts.indexOf(toast)); // Remove toast after 3 seconds
+          this.removeToast(this.toasts.indexOf(toast)); 
         }, 3000);
       },
       

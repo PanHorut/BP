@@ -12,7 +12,9 @@ const router = useRouter();
 </script>
 
 <template>
+  
   <Topics v-if="authStore.role != 'admin'"></Topics>
+  
   <div v-else>
     <p class="text-4xl text-primary flex justify-center font-bold pt-16">
       Vítejte na hlavní stránce
@@ -31,5 +33,6 @@ const router = useRouter();
               duration-300 ease-in-out hover:text-white"> Dovednosti
       </RouterLink>
     </div>
+    
   </div>
 </template>

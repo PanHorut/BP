@@ -15,14 +15,14 @@ const toggleRecording = () => {
   if (recorderStore.isRecording) {
     recorderStore.stopRecording();
   } else {
-    recorderStore.startRecording();
+    recorderStore.startRecording(false);
   }
 };
 
 const confirmRecording = () => {
   recorderStore.allowRecording(); 
   showConfirmation.value = false;
-  recorderStore.startRecording();
+  recorderStore.startRecording(false);
 };
 
 const closeDialog = () => {

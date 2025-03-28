@@ -11,6 +11,7 @@ import correctSoundSrc from '@/assets/audio/correct.mp3';
 import wrongSoundSrc from '@/assets/audio/wrong.mp3';
 import Spinner from '@/components/Spinner.vue';
 import Summary from '@/components/Example/Summary.vue';
+import Survey from '@/components/Example/Survey.vue';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 
 const examples = ref([]); 
@@ -37,6 +38,8 @@ const twoMistakes = ref(0);
 const threeMistakes = ref(0);
 
 const showSummary = ref(false);
+
+const showSurvey = ref(false);
 
 const recorderStore = useRecorderStore();
 
@@ -98,8 +101,14 @@ const displayNext = async (data) => {
       return;
     }
     evaluateMistakes();
-
+    
     curr_index.value++;
+
+    // show survey every 10th example
+    if(curr_index.value % 10 === 0 ){
+      showSurvey.value = true;
+    }
+    
 
     await nextTick();
 
@@ -108,7 +117,6 @@ const displayNext = async (data) => {
       recorderStore.student_answer = '';
       showSummary.value = true;
     }
-
     
   }else {
     console.error("index is out of bounds:", curr_index.value);
@@ -155,27 +163,27 @@ onMounted(() => {
 
   if (route.query.topics) {
       topics.value = JSON.parse(route.query.topics);
-      console.log(topics.value);
       fetchExamples(topics.value);
   }
 });
+
 </script>
 
 <template>
     <!--<SpecialCharsBar v-if="examples.length > curr_index && !showSummary"></SpecialCharsBar>-->
-    <div v-if="examples.length > curr_index && !showSummary" class="flex-col items-center justify-center">
+    <div v-if="examples.length > curr_index && !showSummary && !showSurvey" class="flex-col items-center justify-center">
       <ProgressBar :totalExamples="examples.length" :finishedExamples="curr_index"></ProgressBar>
       <Spinner v-if="loading" class="mt-48"/>
     </div>
     <div class="flex items-center justify-center">
              
-      <Example ref="exampleComponent" v-if="examples.length > curr_index && !showSummary" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
+      <Example ref="exampleComponent" v-if="examples.length > curr_index && !showSummary && !showSurvey" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
       <img v-if="examples.length > curr_index"   :src="isCorrect ? images.correct.src : images.wrong.src" 
       class="w-48 h-48 absolute top-64 z-50" :class="showIcon ? '' : 'hidden'" >
 
       
       <Summary v-if="showSummary" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes"></Summary>
-      
+      <Survey v-if="showSurvey && !showSummary" @hideSurvey="showSurvey = false"></Survey>
     </div>
 
     

@@ -11,27 +11,29 @@ import json
 import tempfile
 import subprocess
 import django
+import io
+import wave
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "be.settings")
 django.setup()
 
 from django.test import RequestFactory
 from .views import skip_example, delete_example_record
-from .models import AudioPrompt, Student, Example
+from .answerChecker import GeminiRateLimitError
 
 
+AUDIO_DIR = "audioprompts"
+os.makedirs(AUDIO_DIR, exist_ok=True)
 
 class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.speech_data = b""  # Accumulate audio for each segment
+        self.speech_data = bytearray()  # Accumulate PCM audio data
         self.message_queue = asyncio.Queue()
         self.loop = asyncio.get_event_loop()
         self.executor = ThreadPoolExecutor(max_workers=1)
-        self.webm_header = None  # Store WebM header for reuse
-        self.is_first_chunk = True  # Track if this is the first chunk
-
+        
         self.metadata = {}
+        self.audio_format = None  # Will be set to 'pcm' or 'webm' based on client metadata
 
-        # Create Azure Speech recognizer and stream
         self.speech_recognizer, self.stream = self.create_speech_recognizer()
         
         # Accept WebSocket connection
@@ -50,22 +52,18 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         if text_data:
             try:
                 new_metadata = json.loads(text_data)
-                self.metadata.update(new_metadata)  
+                self.metadata.update(new_metadata)
+                # Check if format is specified in metadata
+                if 'format' in new_metadata:
+                    self.audio_format = new_metadata['format']
             except json.JSONDecodeError:
                 print("Invalid metadata received.")
         elif bytes_data:
-            # If this is the first chunk ever received, store the WebM header
-            if self.is_first_chunk:
-
-                self.webm_header = bytes_data
-                self.is_first_chunk = False
-                print("Stored WebM header from first chunk")
-            
-            # Send to Azure for processing
+            # Send raw PCM data directly to Azure for processing
             self.stream.write(bytes_data)
             
-            # Accumulate audio for the current segment
-            self.speech_data += bytes_data
+            # Accumulate audio data for storage
+            self.speech_data.extend(bytes_data)
 
     async def receive_audio(self):
         while True:
@@ -73,8 +71,10 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
     def create_speech_recognizer(self):
         speech_config = speechsdk.SpeechConfig(subscription=AZURE_API_KEY, region=AZURE_REGION)
-        format = speechsdk.audio.AudioStreamFormat(compressed_stream_format=speechsdk.AudioStreamContainerFormat.ANY)
-        stream = speechsdk.audio.PushAudioInputStream(format)
+        
+        # Configure for raw PCM audio format
+        format = speechsdk.audio.AudioStreamFormat(samples_per_second=16000, bits_per_sample=16, channels=1)
+        stream = speechsdk.audio.PushAudioInputStream(stream_format=format)
         audio_config = speechsdk.audio.AudioConfig(stream=stream)
 
         speech_recognizer = speechsdk.SpeechRecognizer(
@@ -84,55 +84,44 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         )
 
         def recognized_cb(evt: speechsdk.SpeechRecognitionEventArgs):
-            if evt.result.text and self.speech_data: 
+            if evt.result.text and self.speech_data:
+                # Convert raw PCM data to WAV format for storage
+                wav_data = self.convert_pcm_to_wav(self.speech_data)
 
-                current_audio_data = self.speech_data
+                student_id = self.metadata.get('student_id', 'unknown')
+                example_id = self.metadata.get('example_id', 'unknown')
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
+                audio_filename = f"{student_id}_{example_id}_{timestamp}.wav"
+                json_filename = f"{student_id}_{example_id}_{timestamp}.json"
+
+                audio_filepath = os.path.join(AUDIO_DIR, audio_filename)
+                json_filepath = os.path.join(AUDIO_DIR, json_filename)
+
+
+                with open(audio_filepath, "wb") as f:
+                    f.write(wav_data)
         
-                self.speech_data = b""
+                print(f"Audio saved: {audio_filepath}")
 
-                if self.webm_header is not None:
-                    header_size = min(4096, len(self.webm_header))  # first 4KB or less as header
-                    webm_header = self.webm_header[:header_size]
-            
-                    
+                from .models import Example, Answer
 
-                    if not current_audio_data.startswith(webm_header[:20]):
-                        final_audio_data = webm_header + current_audio_data
-                    else:
-                        final_audio_data = current_audio_data
+                try:
+                    example = Example.objects.get(id=example_id)
+                    answer = Answer.objects.filter(example=example).first() 
+                    correct_answer = answer.answer if answer else "No correct answer found"
+                except Example.DoesNotExist:
+                    example_text = "Example not found"
+                    correct_answer = "No correct answer found"
                 else:
-                    final_audio_data = current_audio_data
-                
-                student_id = self.metadata.get('student_id')
-                example_id = self.metadata.get('example_id')
+                    example_text = example.example
 
-                student = None
-                example = None
+                # Reset accumulated audio data
+                self.speech_data = bytearray()
                 
-                if student_id:
-                    try:
-                        student = Student.objects.get(id=student_id)
-                    except Student.DoesNotExist:
-                        print(f"Student with ID {student_id} not found")
-
-                if example_id:
-                    try:
-                        example = Example.objects.get(id=example_id)
-                    except Example.DoesNotExist:
-                        print(f"Example with ID {example_id} not found")
-                    
-                recording = AudioPrompt(
-                        audio_data=final_audio_data,
-                        transcription=evt.result.text,
-                        student=student,
-                        example=example
-                    )
-                recording.save()
                 from .utils import calculate_duration
-                from .answerChecker import InlineSpeechAnswerChecker, FractionSpeechAnswerChecker, VariableSpeechAnswerChecker
+                from .answerChecker import InlineSpeechAnswerChecker, FractionSpeechAnswerChecker, VariableSpeechAnswerChecker, LLMAnswerChecker
 
-                student_id = self.metadata.get('student_id')
-                example_id = self.metadata.get('example_id')
                 input_type = self.metadata.get('input_type')
                 record_date = self.metadata.get('record_date')
 
@@ -151,6 +140,14 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                     })
                     skip_example(request)
                     response_data = {'skipped': True}
+                    evaluation_data = {
+                        "student_id": student_id,
+                        "example_id": example_id,
+                        "transcription": evt.result.text,
+                        "example_text": example_text,
+                        "correct_answer": correct_answer,
+                        "evaluation": "skipped"
+                    }
 
                 elif any(word in student_answer.lower() for word in finish_words):
                     factory = RequestFactory()
@@ -161,28 +158,67 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                     })
                     delete_example_record(request)
                     response_data = {'finished': True}
+                    evaluation_data = {
+                        "student_id": student_id,
+                        "example_id": example_id,
+                        "transcription": evt.result.text,
+                        "example_text": example_text,
+                        "correct_answer": correct_answer,
+                        "evaluation": "terminated"
+                    }
 
                 else:
+                    
                     if input_type == 'INLINE':
                         isCorrect, continue_with_next, student_answer = InlineSpeechAnswerChecker.verifyAnswer(
                             student_id, example_id, record_date, duration, student_answer
                         )
 
                     elif input_type == 'FRAC':
-                        isCorrect, continue_with_next, student_answer = FractionSpeechAnswerChecker.verifyAnswer(
-                            student_id, example_id, record_date, duration, student_answer
-                        )
+                        
+                        try:
+                            isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
+                                student_id, example_id, record_date, duration, student_answer, 'fraction'
+                            )
+
+                        except GeminiRateLimitError:
+                            print("FRAC gemini limit reached - will use FractionSpeechAnswerChecker")
+                            isCorrect, continue_with_next, student_answer = FractionSpeechAnswerChecker.verifyAnswer(
+                                student_id, example_id, record_date, duration, student_answer
+                            )                               
 
                     elif input_type == 'VAR':
-                        isCorrect, continue_with_next, student_answer = VariableSpeechAnswerChecker.verifyAnswer(
+
+                        try:
+                            isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
+                                student_id, example_id, record_date, duration, student_answer, 'variable'
+                            )
+
+                        except GeminiRateLimitError:
+                            print("VAR gemini limit reached - will use VariableSpeechAnswerChecker")
+                            isCorrect, continue_with_next, student_answer = VariableSpeechAnswerChecker.verifyAnswer(
                             student_id, example_id, record_date, duration, student_answer
                         )
-
+                    
                     response_data = {
                         "isCorrect": isCorrect,
                         "continue_with_next": continue_with_next,
                         "student_answer": student_answer
                     }
+                
+                    evaluation_data = {
+                    "student_id": student_id,
+                    "example_id": example_id,
+                    "transcription": evt.result.text,
+                    "example_text": example_text,
+                    "correct_answer": correct_answer,
+                    "evaluation": isCorrect
+                    }
+
+                with open(json_filepath, "w", encoding="utf-8") as json_file:
+                    json.dump(evaluation_data, json_file, indent=4, ensure_ascii=False)
+
+                print(f"Evaluation saved: {json_filepath}")
 
                 asyncio.run_coroutine_threadsafe(
                     self.send(json.dumps(response_data)),
@@ -192,7 +228,6 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         def recognizing_cb(evt: speechsdk.SpeechRecognitionEventArgs):
             try:
                 if evt.result.text:
-
                     future = asyncio.run_coroutine_threadsafe(
                         self.message_queue.put(f"[interim] {evt.result.text}"),
                         self.loop
@@ -211,3 +246,13 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         self.executor.submit(start_recognition)
         
         return speech_recognizer, stream
+        
+    def convert_pcm_to_wav(self, pcm_data):
+        """Convert raw PCM data to WAV format"""
+        with io.BytesIO() as wav_io:
+            with wave.open(wav_io, 'wb') as wav_file:
+                wav_file.setnchannels(1)  # Mono
+                wav_file.setsampwidth(2)  # 16-bit
+                wav_file.setframerate(16000)  # 16kHz
+                wav_file.writeframes(pcm_data)
+            return wav_io.getvalue()

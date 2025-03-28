@@ -16,7 +16,7 @@ function getAnswer() {
 }
 
 onMounted(() => {
-    if (numeratorInput.value) {
+    if (numeratorInput.value && !recorderStore.isRecording) {
         numeratorInput.value.focus();
     }
 });
@@ -71,6 +71,7 @@ watch(
             @mouseover="handleMouseOver(numeratorInput)"
             class="text-start w-32 md:w-48 text-6xl md:text-8xl border border-gray-300 self-end p-0"
             placeholder="?"
+            inputmode="numeric"
         />
     
         <hr class="w-32 md:w-48 my-2 bg-black border-black border-2 ">
@@ -83,6 +84,7 @@ watch(
             @mouseover="handleMouseOver(denominatorInput)"
             class="text-start w-32 md:w-48 text-6xl md:text-8xl border border-gray-300 self-end p-0"
             placeholder="?"
+            inputmode="numeric"
         />    
     </div>
 </template>

@@ -157,11 +157,11 @@ const handleEditTask = (taskIndex) => {
   <!-- Delete Confirmation Modal -->
   <div v-if="showDeleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg w-1/2">
-      <h2 class="text-lg font-bold mb-4">Opravdu chcete smazat sadu "{{ taskToDeleteName }}"?</h2>
-      <p class="text-gray-600">Tato akce je nevratná.</p>
-      <div class="flex justify-end gap-3 mt-4">
+      <h2 class="text-2xl  mb-4">Opravdu chcete smazat sadu <span class="font-semibold">{{ taskToDeleteName }}</span>?</h2>
+      <p class="mt-2 text-lg font-semibold text-red-600"><i class="fa-solid fa-triangle-exclamation text-xl"></i> Tato akce je nevratná </p>
+      <div class="flex justify-end gap-3 mt-4 font-semibold text-xl">
         <button @click="cancelDelete"
-          class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-semibold">
+          class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
           Zrušit
         </button>
         <button @click="handleDeleteTask"

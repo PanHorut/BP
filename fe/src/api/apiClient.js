@@ -2,7 +2,7 @@ import axios from 'axios';
 import qs from 'qs'; 
 
 const apiClient = axios.create({
-  baseURL:  'https://drillovacka.applikuapp.com/api/',// 'https://bp-production-37c0.up.railway.app/api/',     'http://localhost:8000/api/'
+  baseURL: 'https://drillovacka.applikuapp.com/api/' ,// 'https://bp-production-37c0.up.railway.app/api/',      'https://drillovacka.applikuapp.com/api/' 'http://localhost:8000/api/'
   headers: {
     //'Content-Type': 'application/json',
   },
@@ -355,6 +355,31 @@ export const getSandboxSkillPaths = async (skillIds) => {
     return response.data;
   } catch (error) {
     console.error('Error fetching sandbox skill paths:', error);
+  }
+}
+
+export const getRelatedTasksCount = async (skillId) => {
+  try {
+    const response = await apiClient.get('skills/related-counts/', {
+      params: {
+        skill_id: skillId
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching tasks and examples count:', error);
+  }
+}
+
+export const sendSurveyAnswer = async (questionType, questionText, answer) => {
+  try {
+    const response = await apiClient.post('survey-answer/', {
+      question_type: questionType,
+      question_text: questionText,
+      answer
+    });
+  } catch (error) {
+    console.error('Error sending survey answer:', error);
   }
 }
 
