@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     python3-dev \
     libssl-dev \
+    portaudio19-dev \
     gstreamer1.0 \
     gstreamer1.0-plugins-base \
     gstreamer1.0-plugins-good \
