@@ -46,6 +46,10 @@ const recorderStore = useRecorderStore();
 const correctSound = new Audio(correctSoundSrc);
 const wrongSound = new Audio(wrongSoundSrc);
 
+const storedExamplesCounted = sessionStorage.getItem("examplesCounted");
+
+const examplesCounted = ref(storedExamplesCounted ? parseInt(storedExamplesCounted, 10) : 0);
+
 const preloadMedia = () => {
   const correct = new Image();
   const wrong = new Image();
@@ -103,9 +107,12 @@ const displayNext = async (data) => {
     evaluateMistakes();
     
     curr_index.value++;
+    examplesCounted.value++;
+    sessionStorage.setItem("examplesCounted", examplesCounted.value.toString());
+
 
     // show survey every 10th example
-    if(curr_index.value % 10 === 0 ){
+    if(examplesCounted.value % 10 === 0 ){
       showSurvey.value = true;
     }
     
