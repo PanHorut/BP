@@ -976,7 +976,7 @@ def get_skill_related_counts(request):
 
 from datetime import datetime
 import os
-from .utils import get_skill_names_string
+from .utils import get_skill_names_string_sync
 SURVEY_DIR = "survey"
 os.makedirs(SURVEY_DIR, exist_ok=True)
 
@@ -986,7 +986,7 @@ def save_survey_answer(request):
     question_text = request.data.get('question_text')
     answer = request.data.get('answer')
     skills = request.data.get('skills')
-    skill_names = get_skill_names_string(skills)
+    skill_names = get_skill_names_string_sync(skills)
 
     if not question_type or not question_text or not answer:
         return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)

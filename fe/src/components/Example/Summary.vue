@@ -23,7 +23,11 @@ const props = defineProps({
     threeMistakes: {
         type: Number,
         required: true
-    }
+    },
+    topics: {
+    type: Array,
+    required: true
+    } 
 })
 
 const total = computed(() => {
@@ -64,7 +68,7 @@ const handleEmojiSelection = async () => {
         return;
     }
 
-    await sendSurveyAnswer('summary', 'Jak se ti líbilo procvičování s touto aplikací?', emojiRatings.value[selectedEmoji.value].label);  
+    await sendSurveyAnswer('summary', 'Jak se ti líbilo procvičování s touto aplikací?', emojiRatings.value[selectedEmoji.value].label, props.topics);  
 
 }
 

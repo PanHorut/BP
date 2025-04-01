@@ -189,7 +189,7 @@ onMounted(() => {
       class="w-48 h-48 absolute top-64 z-50" :class="showIcon ? '' : 'hidden'" >
 
       
-      <Summary v-if="showSummary" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes"></Summary>
+      <Summary v-if="showSummary" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes" :topics="topics"></Summary>
       <Survey v-if="showSurvey && !showSummary" @hideSurvey="showSurvey = false" :topics="topics"></Survey>
     </div>
 
