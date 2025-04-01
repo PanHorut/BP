@@ -1,6 +1,8 @@
 from .models import Skill, ExampleSkill
 from collections import defaultdict
 from datetime import datetime, timezone
+from asgiref.sync import sync_to_async
+
 
 
 
@@ -156,7 +158,17 @@ def calculate_duration(record_date_str):
         print(f"Error parsing record_date: {e}")
         return 0  
 
+def get_skill_names_string_sync(skill_ids):
+    
+    if not skill_ids:
+        return ""
+    
+    skills = Skill.objects.filter(id__in=skill_ids, deleted=False)
+    
+    skill_names = [skill.name for skill in skills]
+    
+    return ", ".join(skill_names)
 
 
-
+get_skill_names_string = sync_to_async(get_skill_names_string_sync)
 

@@ -190,7 +190,7 @@ onMounted(() => {
 
       
       <Summary v-if="showSummary" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes"></Summary>
-      <Survey v-if="showSurvey && !showSummary" @hideSurvey="showSurvey = false"></Survey>
+      <Survey v-if="showSurvey && !showSummary" @hideSurvey="showSurvey = false" :topics="topics"></Survey>
     </div>
 
     

@@ -2,7 +2,7 @@ import axios from 'axios';
 import qs from 'qs'; 
 
 const apiClient = axios.create({
-  baseURL: 'https://drillovacka.applikuapp.com/api/',// 'https://bp-production-37c0.up.railway.app/api/',        'http://localhost:8000/api/'
+  baseURL: 'https://drillovacka.applikuapp.com/api/',// 'https://bp-production-37c0.up.railway.app/api/',  'http://localhost:8000/api/'
   headers: {
     //'Content-Type': 'application/json',
   },
@@ -371,12 +371,14 @@ export const getRelatedTasksCount = async (skillId) => {
   }
 }
 
-export const sendSurveyAnswer = async (questionType, questionText, answer) => {
+export const sendSurveyAnswer = async (questionType, questionText, answer, skills) => {
   try {
     const response = await apiClient.post('survey-answer/', {
       question_type: questionType,
       question_text: questionText,
-      answer
+      answer,
+      skills
+
     });
   } catch (error) {
     console.error('Error sending survey answer:', error);

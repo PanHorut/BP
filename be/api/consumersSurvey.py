@@ -9,6 +9,7 @@ import django
 import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "be.settings")
 django.setup()
+from .utils import get_skill_names_string
 
 SURVEY_DIR = "survey"
 os.makedirs(SURVEY_DIR, exist_ok=True)
@@ -19,6 +20,8 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
         self.speech_data = bytearray()
         self.full_transcript = ""
         self.question_text = ""
+        self.skills = []
+        self.skill_names = ""
         self.loop = asyncio.get_event_loop()
         self.executor = asyncio.get_running_loop().run_in_executor
         
@@ -39,9 +42,11 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
         
         print(self.full_transcript)
 
+
         survey_question_data = {
             "question_text": self.question_text,
             "answer": self.full_transcript,
+            "examples_type": self.skill_names,
             "timestamp": timestamp
         }
 
@@ -55,7 +60,8 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
             try:
                 metadata = json.loads(text_data)
                 self.question_text = metadata.get("question_text")
-                print(metadata.get("question_text"))    
+                self.skills = metadata.get("skills")
+                self.skill_names = await get_skill_names_string(self.skills)
             except json.JSONDecodeError:
                 print("Invalid metadata received")
         

@@ -18,6 +18,7 @@ export const useRecorderStore = defineStore("recorder", () => {
 
   // Survey info
   const question_text = ref(null);
+  const skillsList = ref(null);
 
   // Audio processing variables
   let audioContext = null;
@@ -75,7 +76,7 @@ export const useRecorderStore = defineStore("recorder", () => {
     try {
       if (!ws || ws.readyState !== WebSocket.OPEN) {
         let wsurl = isSurvey ? "wss://drillovacka.applikuapp.com/ws/survey/" : "wss://drillovacka.applikuapp.com/ws/speech/"; // POZOR NA DEPLOY
-        ws = new WebSocket(wsurl); //    "ws://localhost:8000/ws/survey/" : "ws://localhost:8000/ws/speech/"
+        ws = new WebSocket(wsurl); // "ws://localhost:8000/ws/survey/" : "ws://localhost:8000/ws/speech/"
         ws.onopen = () => {
           console.log("WebSocket connection opened.");
 
@@ -193,14 +194,16 @@ export const useRecorderStore = defineStore("recorder", () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ 
         question_text: question_text.value, 
-        question_type: 'open-question', 
+        question_type: 'open-question',
+        skills: JSON.parse(JSON.stringify(skillsList.value)), 
         format: "pcm"
       }));
       }
   };
 
-  const updateSurveyQuestionData = (questionText) => {
+  const updateSurveyQuestionData = (questionText, skills) => {
     question_text.value = questionText;
+    skillsList.value = skills;
     sendSurveyQuestionData();
   };
 

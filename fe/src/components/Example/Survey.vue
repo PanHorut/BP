@@ -1,9 +1,16 @@
 <script setup>
-import { ref, defineEmits, onMounted } from 'vue';
+import { ref, defineEmits, defineProps, onMounted } from 'vue';
 
 import { useRecorderStore } from "@/stores/useRecorderStore";
 import { sendSurveyAnswer } from '@/api/apiClient';
 import SpeechVisualizer from './SpeechVisualizer.vue';
+
+const props = defineProps({
+  topics: {
+    type: Array,
+    required: true
+  } 
+});
 
 const recorderStore = useRecorderStore();
 const selectedScale = ref(null);
@@ -63,7 +70,7 @@ const handleNext = () => {
 }
 
 const handleChoiceSelection = async (choice) => {
-  await sendSurveyAnswer('choice', questions.value[index.value].text, choice);
+  await sendSurveyAnswer('choice', questions.value[index.value].text, choice, props.topics);
   handleNext();
 }
 
@@ -72,7 +79,7 @@ const sendScaleSelection = async () => {
     return;
 
   } else {
-    await sendSurveyAnswer('scale', questions.value[index.value].text, selectedScale.value);
+    await sendSurveyAnswer('scale', questions.value[index.value].text, selectedScale.value, props.topics);
     handleNext();
   }
 
@@ -84,9 +91,8 @@ const handleScaleSelection = (num) => {
 };
 
 onMounted(() => {
-  
   if (index.value >= 0 && index.value < questions.value.length) {
-    recorderStore.updateSurveyQuestionData(questions.value[index.value].text);
+    recorderStore.updateSurveyQuestionData(questions.value[index.value].text, props.topics);
   } else {
     console.error("Invalid index value:", index.value);
   }
