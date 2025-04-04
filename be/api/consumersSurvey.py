@@ -24,6 +24,7 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
         self.skill_names = ""
         self.loop = asyncio.get_event_loop()
         self.executor = asyncio.get_running_loop().run_in_executor
+        self.language = "cs-CZ"
         
         self.speech_recognizer, self.stream = self.create_speech_recognizer()
         
@@ -62,6 +63,11 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
                 self.question_text = metadata.get("question_text")
                 self.skills = metadata.get("skills")
                 self.skill_names = await get_skill_names_string(self.skills)
+
+                if 'language' in metadata:
+                    self.language = metadata['language']
+                    self.speech_recognizer.stop_continuous_recognition()
+                    self.speech_recognizer, self.stream = self.create_speech_recognizer()
             except json.JSONDecodeError:
                 print("Invalid metadata received")
         
@@ -78,7 +84,7 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
         speech_recognizer = speechsdk.SpeechRecognizer(
             speech_config=speech_config,
             audio_config=audio_config,
-            language="cs-CZ"  
+            language=self.language  
         )
         
         # Set up event handlers

@@ -1,10 +1,8 @@
 <script setup>
-import {ref, computed } from 'vue';
-import { RouterLink, useRoute } from 'vue-router';
-
-
 import { defineProps } from 'vue'
 import { useRouter } from 'vue-router'
+import { useLanguageStore } from '@/stores/useLanguageStore'
+import { getSkillName } from '@/utils/dictionary'
 
 const props = defineProps({
   topic: {
@@ -18,6 +16,7 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const langStore = useLanguageStore()
 
 function goToTopicDetail() {
   router.push({ name: 'topic', params: { id: Number(props.id) } })
@@ -33,7 +32,7 @@ function goToTopicDetail() {
   >
     <h2 class="flex justify-center text-3xl text-center font-bold text-primary p-4 
               transition duration-300 ease-in-out hover:text-white">
-      {{ topic }}
+      {{ getSkillName(topic, langStore.language) }}
     </h2>
   </div>
 </template>

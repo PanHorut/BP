@@ -6,11 +6,14 @@ import VariableInput from './Input Fields/VariableInput.vue';
 import SetInput from './Input Fields/SetInput.vue';
 import Timer from '@/components/Example/Timer.vue';
 import SpeechRecorder from '@/components/Example/SpeechRecorder.vue';
+import Answer from '@/components/Example/Answer.vue';
 import Tips from '@/components/Example/Tips.vue';
 import { updateRecord, createRecord, skipExample, deleteRecord, checkAnswer } from '@/api/apiClient';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRecorderStore } from '@/stores/useRecorderStore';
+import { useLanguageStore } from '@/stores/useLanguageStore';
+import { dictionary } from '@/utils/dictionary';
 
 const props = defineProps({
   example: {
@@ -34,23 +37,21 @@ const authStore = useAuthStore();
 const student_id = authStore.id || 1;
 const speechRecorder = ref(null);
 const recorderStore = useRecorderStore();
+const langStore = useLanguageStore();
 
 const student_answer = ref('');
 
 let isWordProblem = ref(false);
-
+const showAnswer = ref(false);
 
 const checkInline = async (answer) => {
-
 
   const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answer, "inline");
   emits('answerSent', { isCorrect: result.isCorrect, nextExample: result.continue_with_next });
 
-
   if (!result.isCorrect) {
     clearInput();
   }
-
 };
 
 const checkFraction = async (numerator, denominator) => {
@@ -62,7 +63,6 @@ const checkFraction = async (numerator, denominator) => {
   if (!result.isCorrect) {
     clearInput();
   }
-
 }
 
 const checkVariables = async (variables) => {
@@ -103,14 +103,14 @@ const initRecord = async () => {
 
 }
 
-const skip = async () => {
-  const result = await skipExample(student_id, props.example.id, record_date.value);
+const skip = () => {
+  skipExample(student_id, props.example.id, record_date.value);
   emits('skipped', { skipped: true });
 
 }
 
-const finish = async () => {
-  const result = await deleteRecord(student_id, props.example.id, record_date.value);
+const finish = () => {
+  deleteRecord(student_id, props.example.id, record_date.value);
   emits('finished');
 
 }
@@ -134,9 +134,10 @@ function renderMathJax() {
 }
 
 const handleEnter = (event) => {
-  if (event.key === 'Enter') {
+  if (event.key === 'Enter' && !showAnswer.value) {
     getAnswer();
   }
+
 };
 
 const getAnswer = () => {
@@ -196,7 +197,17 @@ const getStep = (mistakes) => {
   return null;
 };
 
-defineExpose({ getStep });
+const displayAnswer = () => {
+  showAnswer.value = true;
+  nextTick(() => {
+    setTimeout(() => {
+
+      showAnswer.value = false;
+    }, 1500);
+  });
+}
+
+defineExpose({ getStep, displayAnswer });
 
 </script>
 
@@ -210,8 +221,9 @@ defineExpose({ getStep });
 
         <div @click="finish" class="text-center text-lg md:text-xl font-extrabold  mr-2 md:mr-0 text-white bg-red-600 
          border-4 border-red-700 p-2 md:p-3 rounded-2xl cursor-pointer transition 
-         shadow-lg hover:bg-red-700 hover:border-red-700 hover:scale-105">
-          UKONČIT
+         shadow-lg hover:bg-red-700 hover:border-red-700 hover:scale-105"
+          :class="showAnswer ? 'pointer-events-none' : ''">
+          {{ dictionary[langStore.language].quit.toUpperCase() }}
         </div>
 
       </div>
@@ -219,12 +231,10 @@ defineExpose({ getStep });
     <div class="flex items-center justify-center mt-10 md:mt-20">
       <div class="flex flex-col">
 
-        <div
-  :class="[
-    isWordProblem ? 'text-xl md:text-3xl flex flex-col items-center' : 'text-4xl md:text-7xl flex flex-col',
-    props.example.input_type == 'FRAC' ? 'text-5xl' : 'text-4xl'
-  ]"
->
+        <div :class="[
+          isWordProblem ? 'text-xl md:text-3xl flex flex-col items-center' : 'text-4xl md:text-7xl flex flex-col',
+          props.example.input_type == 'FRAC' ? 'text-5xl' : 'text-4xl'
+        ]">
 
 
           <div class="flex items-center justify-center" :class="isWordProblem ? 'w-2/3 ' : 'w-full'">
@@ -245,7 +255,8 @@ defineExpose({ getStep });
               <InlineInput v-else-if="props.example.input_type == 'WORD'" ref="inlineInput" @answerSent="checkInline">
               </InlineInput>
             </div>
-            <SpeechRecorder ref="speechRecorder" class="mt-6 md:ml-8 md:mt-0"></SpeechRecorder>
+            <SpeechRecorder ref="speechRecorder" class="mt-6 md:ml-8 md:mt-0"
+              :class="showAnswer ? 'pointer-events-none' : ''"></SpeechRecorder>
 
           </div>
           <div v-if="step" class="mt-8">
@@ -257,26 +268,33 @@ defineExpose({ getStep });
     </div>
     <div class="flex flex-col items-center justify-center w-full">
       <div class="flex items-center justify-around  w-full md:w-1/3 ">
-        <Tips class="invisible"/> 
+        <Tips class="invisible" />
 
         <div @click="getAnswer" class=" text-center text-4xl font-extrabold text-white bg-green-500 
              border-4 border-green-600 p-5 rounded-3xl cursor-pointer my-6 
-             transition ease-in-out hover:bg-green-600 hover:scale-105 shadow-lg">
-          Hotovo!
+             transition ease-in-out hover:bg-green-600 hover:scale-105 shadow-lg"
+          :class="showAnswer ? 'pointer-events-none' : ''">
+          {{ dictionary[langStore.language].done.toUpperCase() }}
         </div>
 
-        <Tips /> 
+        <Tips :class="{
+          'invisible': langStore.language === 'en',
+          'pointer-events-none': showAnswer
+        }" />
       </div>
 
 
       <div @click="skip" class="text-center text-2xl font-extrabold text-gray-700 bg-gray-200 
            border-4 border-gray-500 px-8 py-2 rounded-2xl cursor-pointer
-           transition ease-in-out hover:bg-gray-300 hover:border-gray-700 hover:scale-105 shadow-md">
-        NEVÍM
+           transition ease-in-out hover:bg-gray-300 hover:border-gray-700 hover:scale-105 shadow-md"
+        :class="showAnswer ? 'pointer-events-none' : ''">
+        {{ dictionary[langStore.language].skip.toUpperCase() }}
       </div>
 
-
-
     </div>
+
   </div>
+  <Answer v-if="showAnswer" class="absolute top-96 md:top-auto right-auto z-50"
+    :answer="props.example.answers[0].answer"></Answer>
+
 </template>

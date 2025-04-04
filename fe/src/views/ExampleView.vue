@@ -41,6 +41,8 @@ const showSummary = ref(false);
 
 const showSurvey = ref(false);
 
+const showAnswer = ref(false);
+
 const recorderStore = useRecorderStore();
 
 const correctSound = new Audio(correctSoundSrc);
@@ -73,16 +75,19 @@ const evaluateMistakes = () => {
     twoMistakes.value++;
   }else if(mistakes.value === 3){
     threeMistakes.value++;
+    mistakes.value = 0;
+    isSkipped.value = false;
+    return true;
   }
 
   mistakes.value = 0;
   isSkipped.value = false;
+  return false;
 };
 
 
 const displayNext = async (data) => {
   
-
   if (curr_index.value >= 0 && curr_index.value < examples.value.length) {
     
     if (data.skipped) {
@@ -104,9 +109,24 @@ const displayNext = async (data) => {
       exampleComponent.value.getStep(mistakes.value)
       return;
     }
-    evaluateMistakes();
+
+    showAnswer.value = evaluateMistakes();
+
+    if(showAnswer.value){
+      exampleComponent.value.displayAnswer();
+      setTimeout(() => {
+        curr_index.value++;
+        if (curr_index.value === examples.value.length) {
+          recorderStore.stopRecording();  
+          recorderStore.student_answer = '';
+          showSummary.value = true;
+        }
+      }, 1500);
+
+    }else{
+      curr_index.value++;
+    }
     
-    curr_index.value++;
     examplesCounted.value++;
     sessionStorage.setItem("examplesCounted", examplesCounted.value.toString());
 

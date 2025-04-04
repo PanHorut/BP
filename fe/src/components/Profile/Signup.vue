@@ -4,8 +4,9 @@ import { useRouter } from 'vue-router';
 import generatePassphrase from '@/utils/passphraseGenerator';  
 import { registerStudent } from '@/api/apiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { dictionary } from '@/utils/dictionary';
+import { useLanguageStore } from '@/stores/useLanguageStore';
 
-// State Management
 const username = ref('');
 const passphrase = ref('');
 const usernameError = ref('');
@@ -14,47 +15,38 @@ const showPassphrase = ref(false);
 const copied = ref(false);
 const errorMessage = ref('');
 
-// Store & Router
 const authStore = useAuthStore();
 const router = useRouter();
+const langStore = useLanguageStore();
 
-// Function to handle form submission
 const handleSubmit = async () => {
-  // Reset Errors
   usernameError.value = '';
   passphraseError.value = '';
   errorMessage.value = '';
 
-  // Form Validation
   if(username.value.trim() === '' || passphrase.value.trim() === ''){
     if (username.value.trim() === '') {
-      usernameError.value = 'Zapomněl jsi vyplnit přezdívku';
+      usernameError.value = dictionary[langStore.language].usernameForgot;
     }
     if (passphrase.value.trim() === '') {
-      passphraseError.value = 'Nejprve si musíš vygenerovat přístupový kód';
+      passphraseError.value = dictionary[langStore.language].passphraseForgot;
     }
     return;
   } 
 
-  // API Call
   const result = await registerStudent(username.value, passphrase.value);
 
-  // Handle Registration Response
-  if (result.status === 201) {  // Assuming 201 Created for successful registration
-    // Auto-Login after successful registration
+  if (result.status === 201) {  
     await authStore.login(username.value, passphrase.value, router, false, false);
 
-    // Redirect to a protected route or home page
   } else {
     usernameError.value = result.error;
   }
 };
 
-
-// Function to generate a passphrase using random-words
 const getPassphrase = () => {
   try {
-    passphrase.value = generatePassphrase();
+    passphrase.value = generatePassphrase(langStore.language);
     showPassphrase.value = true;
     copied.value = false; 
     
@@ -80,26 +72,26 @@ const copyToClipboard = () => {
 
 <template>
   <div class="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg mt-12 mb-4">
-    <h2 class="text-4xl font-bold text-primary mb-16 text-center">Registrace</h2>
+    <h2 class="text-4xl font-bold text-primary mb-16 text-center">{{dictionary[langStore.language].register}}</h2>
     <form @submit.prevent="handleSubmit">
       <div class="mb-4">
-        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Přezdívka</label>
+        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">{{dictionary[langStore.language].nickname}}</label>
         <input 
           type="text" 
           id="username" 
           v-model="username" 
-          placeholder="Tvá přezdívka" 
+          :placeholder="dictionary[langStore.language].nicknamePlaceholder" 
           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
         />
         <span class="text-red-600 ml-1">{{ usernameError }}</span>
       </div>
 
       <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Přístupový kód</label>
+        <label class="block text-sm font-medium text-gray-700 mb-2">{{dictionary[langStore.language].accessCode}}</label>
         <div 
           class="w-full text-gray-700 font-bold text-center flex items-center justify-between space-x-2 h-6 text-lg">
           <div></div>
-          <span :class="[passphrase ? '' : 'text-gray-500']">{{ passphrase ? passphrase : 'Vygeneruj si svůj přístupový kód'}}</span>
+          <span :class="[passphrase ? '' : 'text-gray-500']">{{ passphrase ? passphrase : dictionary[langStore.language].generatePassphrasePlaceholder}}</span>
           <button 
             @click="copyToClipboard" 
             type="button"
@@ -111,7 +103,7 @@ const copyToClipboard = () => {
         <span
           class="text-primary text-sm text-center flex justify-center"
           :class="[copied ? 'visible' : 'invisible']">
-          Zkopírováno!
+          {{ dictionary[langStore.language].copied }}
         </span>
         <span class="text-red-600 flex">{{ passphraseError }}</span>
       </div>
@@ -121,13 +113,13 @@ const copyToClipboard = () => {
           type="button" 
           @click="getPassphrase"
           class="w-4/6 py-2 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">
-          Vygenerovat kód
+          {{ dictionary[langStore.language].generatePassphrase }}
         </button>
       </div>
       
       <button type="submit" 
               class="w-full py-2 bg-secondary text-white font-semibold rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        Registrovat se
+        {{ dictionary[langStore.language].register }}
       </button>
     </form>
 

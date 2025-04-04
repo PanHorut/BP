@@ -12,6 +12,7 @@ from .utils import get_height, build_skill_tree, get_skill_paths
 from django.contrib.auth.hashers import make_password, check_password
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
 
+
 import json
 import random
 
@@ -668,7 +669,6 @@ def get_related_skills_tree(request, skill_id):
 @api_view(['GET'])
 def get_children_skills_tree(request, skill_id):
     withCounts = request.GET.get('with_counts', 'false') == 'true'
-    print(withCounts)
 
     try:
         main_skill = Skill.objects.get(id=skill_id)  
@@ -974,6 +974,7 @@ def get_skill_related_counts(request):
 
     return Response(data)
 
+
 from datetime import datetime
 import os
 from .utils import get_skill_names_string_sync
@@ -1009,4 +1010,3 @@ def save_survey_answer(request):
         json.dump(survey_question_data, json_file, indent=4, ensure_ascii=False)
     
     return Response(status=status.HTTP_200_OK)
-

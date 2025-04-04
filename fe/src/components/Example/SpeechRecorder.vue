@@ -49,7 +49,7 @@ defineExpose({
       :barColor="recorderStore.isRecording ? '#457b9d' : '#f1faee'" :width="300" :height="100" :barWidth="10"
       :barGap="8" :barCount="10" />
     <!-- Confirmation Dialog -->
-    <div v-if="showConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div v-if="showConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-40">
       <div class="bg-white p-12 rounded-lg shadow-xl w-2/3  md:w-1/2 text-center">
         <p class=" text-lg font-semibold mb-10 md:mb-20 md:text-2xl">Během zadávání výsledků hlasem budou pro zlepšení
           této aplikace Vaše hlasové odpovědi

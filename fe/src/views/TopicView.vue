@@ -1,10 +1,12 @@
 <script setup>
 import { ref, defineProps, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getSkill, getRelatedSkillsTree, getChildrenSkillsTree, getOperationSkills } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 import OperationButton from '@/components//TopicSelector/OperationButton.vue';
 import SubTopic from '@/components/TopicSelector/SubTopic.vue';
+import { dictionary, getSkillName } from '@/utils/dictionary';
+import { useLanguageStore } from '@/stores/useLanguageStore';
+import { useSkillStore } from '@/stores/useSkillStore';
 
 const props = defineProps({
   id: {
@@ -19,19 +21,23 @@ const operations = ref([]);
 const noTopics = ref(false);
 const loading = ref(true);
 
+const langStore = useLanguageStore();
+const skillStore = useSkillStore();
+
 onMounted(async () => {
   try {
-    topic.value = await getSkill(props.id);
+    // Use the store for all API calls
+    topic.value = await skillStore.fetchSkill(props.id);
 
     if(topic.value.skill_type === 'OPERATION') {
-      subtopics.value = await getRelatedSkillsTree(props.id);
+      subtopics.value = await skillStore.fetchRelatedSkillsTree(props.id);
       
     } else if(topic.value.skill_type === 'NUMBER_DOMAIN') {
-      subtopics.value = await getChildrenSkillsTree(props.id, false);
-      operations.value = await getOperationSkills(props.id);
+      subtopics.value = await skillStore.fetchChildrenSkillsTree(props.id, false);
+      operations.value = await skillStore.fetchOperationSkills(props.id);
       
     } else if(topic.value.skill_type === 'EQUATION') {
-      subtopics.value = await getChildrenSkillsTree(props.id, true);
+      subtopics.value = await skillStore.fetchChildrenSkillsTree(props.id, true);
     } 
 
     selectedSubtopics.value.push(topic.value);
@@ -70,22 +76,19 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
     }
   });
 };
-
-
-
 </script>
 
 <template>
   <div class="flex flex-col items-center md:pt-20">
     <h1 class="text-5xl font-bold text-primary my-8" v-if="topic">
-      {{ topic.name }}
+      {{ getSkillName(topic.name, langStore.language) }}
     </h1>
     
 
     <Spinner v-if="loading" class="mt-24" />
 
     <!-- Render operations as buttons using the new component -->
-    <p v-if="operations.length > 0" class="text-secondary font-semibold text-xl mt-8 mb-4">Vyber operace, které chceš procvičit</p>
+    <p v-if="operations.length > 0" class="text-secondary font-semibold text-xl text-center mt-8 mb-4">{{ dictionary[langStore.language].chooseOperation }}</p>
     <div v-if="operations.length > 0" class="grid grid-cols-2 gap-4 mb-4 md:flex md:flex-row md:flex-wrap md:space-x-4 md:justify-start justify-center">
       <OperationButton 
         v-for="operation in operations" 
@@ -98,7 +101,7 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
       />
     </div>
 
-    <p v-if="subtopics.length > 0" class="text-secondary font-semibold text-xl mt-8 mb-4">Jaké příklady chceš procvičit? </p>
+    <p v-if="subtopics.length > 0" class="text-secondary font-semibold text-xl text-center mt-8 mb-4">{{ dictionary[langStore.language].chooseTopic }}</p>
     <div v-if="subtopics.length > 0" class="flex flex-col md:flex-row ">
       <SubTopic
         v-for="subtopic in subtopics"
@@ -109,7 +112,7 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
     </div>
 
     <div @click="startPractice" class="my-20 px-6 py-3 bg-secondary text-4xl md:text-3xl font-bold text-white rounded-lg cursor-pointer hover:bg-primary transition">
-      JDEME NA TO
+      {{ dictionary[langStore.language].startPractice }}
     </div>
   </div>
 </template>

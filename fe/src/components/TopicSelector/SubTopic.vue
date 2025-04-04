@@ -1,5 +1,7 @@
 <script setup>
 import { ref, defineProps, watch } from 'vue';
+import { useLanguageStore } from '@/stores/useLanguageStore';
+import { getSkillName } from '@/utils/dictionary';
 
 const props = defineProps({
   subtopic: {
@@ -12,6 +14,7 @@ const props = defineProps({
 });
 
 const isSelected = ref(false);
+const langStore = useLanguageStore();
 
 watch(isSelected, (newValue) => {
   if (newValue) {
@@ -42,12 +45,18 @@ const removeChildrenFromSelection = (subskills) => {
 }
 
 const getCorrectForm = (count) => {
-  if (count === 1) {
-    return 'příklad';
-  } else if (count > 1 && count < 5) {
-    return 'příklady';
+
+  if (langStore.language === 'en') {
+    return count === 1 ? 'example' : 'examples';
+
   } else {
-    return 'příkladů';
+    if (count === 1) {
+      return 'příklad';
+    } else if (count > 1 && count < 5) {
+      return 'příklady';
+    } else {
+      return 'příkladů';
+    }
   }
 }
 </script>
@@ -61,7 +70,7 @@ const getCorrectForm = (count) => {
           v-model="isSelected" 
           class="h-8 w-8  rounded text-primary border-gray-500 focus:ring-2 focus:ring-primary"
         />
-        <span class="font-medium text-2xl">{{ subtopic.name }}</span>
+        <span class="font-medium text-2xl">{{ getSkillName(subtopic.name, langStore.language) }}</span>
         <span class="text-lg text-gray-500">({{ subtopic.examples }} {{ getCorrectForm(subtopic.examples) }})</span>
       </label>
     </div>

@@ -17,6 +17,10 @@ class GeminiRateLimitError(Exception):
 class AnswerChecker:
 
     @staticmethod
+    def is_valid_answer(answer):
+            return bool(re.match(r'^[0-9,.-]+$', answer))
+
+    @staticmethod
     def updateRecord(student_id, example_id, date, duration, correct):
         record = get_object_or_404(StudentExample, student_id=student_id, example_id=example_id, date=date)
 
@@ -41,7 +45,7 @@ class AnswerChecker:
         return math.isclose(correct_answer, student_answer, rel_tol=1e-9)
     
 
-
+    @staticmethod
     def compareAnswersWithGemini(correct_answer, student_answer, prompt):
         try:
             model = genai.GenerativeModel("gemini-2.0-flash") # nebo asi vic accurate gemini-2.0-flash a gemini-1.5-flash se da fine-tunovat
@@ -70,12 +74,11 @@ class InlineAnswerChecker(AnswerChecker):
     @staticmethod
     def verifyAnswer(student_id, example_id, date, duration, student_answer):   
 
-        def is_valid_answer(answer):
-            return bool(re.match(r'^[0-9,.-]+$', answer))
+        
 
         correct_answer = Answer.objects.get(example_id=example_id).answer
 
-        if not is_valid_answer(correct_answer) or not is_valid_answer(student_answer) or not student_answer:
+        if not InlineAnswerChecker.is_valid_answer(correct_answer) or not InlineAnswerChecker.is_valid_answer(student_answer) or not student_answer:
             continue_with_next = AnswerChecker.updateRecord(student_id, example_id, date, duration, False)
             return (False, continue_with_next)
 
@@ -105,10 +108,18 @@ class FractionAnswerChecker(AnswerChecker):
         else:
             print("Invalid fraction format.")
         
-        student_numerator = float(student_answer[0].replace(',', '.'))
-        student_denominator = float(student_answer[1].replace(',', '.'))
+        
+        if(FractionAnswerChecker.is_valid_answer(student_answer[0]) and FractionAnswerChecker.is_valid_answer(student_answer[1])):  
+            student_numerator = float(student_answer[0].replace(',', '.'))
+            student_denominator = float(student_answer[1].replace(',', '.'))
+        else:
+            continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+            return (False, continue_with_next)
+        
+        student_answer = student_numerator / student_denominator
+        correct_answer = correct_numerator / correct_denominator
 
-        if AnswerChecker.compareAnswers(correct_numerator, student_numerator) and AnswerChecker.compareAnswers(correct_denominator, student_denominator):
+        if AnswerChecker.compareAnswers(correct_answer, student_answer):
             continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
             return (True, continue_with_next)
         else:
@@ -138,7 +149,7 @@ class VariableAnswerChecker(AnswerChecker):
         for value in student_answer:
 
             # nevyplnena hodnota -> spatne
-            if not value:
+            if not value or not VariableAnswerChecker.is_valid_answer(value):
                 continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
                 return (False, continue_with_next)
 
@@ -181,7 +192,7 @@ class InlineSpeechAnswerChecker(AnswerChecker):
             if AnswerChecker.compareAnswers(num, correct_answer):
                 is_correct = True
                 correct_number = num
-                break  # Stop at the first correct number
+                break  # stop at the first correct number
 
         if not is_correct and extracted_numbers:
             correct_number = extracted_numbers[-1] 

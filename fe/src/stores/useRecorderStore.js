@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, onUnmounted } from "vue";
+import { useLanguageStore } from "./useLanguageStore";
 
 export const useRecorderStore = defineStore("recorder", () => {
   const isRecording = ref(false);
@@ -76,14 +77,20 @@ export const useRecorderStore = defineStore("recorder", () => {
     try {
       if (!ws || ws.readyState !== WebSocket.OPEN) {
         let wsurl = isSurvey ? "wss://drillovacka.applikuapp.com/ws/survey/" : "wss://drillovacka.applikuapp.com/ws/speech/"; // POZOR NA DEPLOY
-        ws = new WebSocket(wsurl); //  "ws://localhost:8000/ws/survey/" : "ws://localhost:8000/ws/speech/"
+        ws = new WebSocket(wsurl); // "ws://localhost:8000/ws/survey/" : "ws://localhost:8000/ws/speech/"
         ws.onopen = () => {
           console.log("WebSocket connection opened.");
-
           if (isSurvey) { 
             sendSurveyQuestionData();
           } else{
             sendExampleData();
+          }
+
+          const langStore = useLanguageStore();
+          if(langStore.language === 'en') {
+            changeASRLanguage('en-US');
+          } else {
+            changeASRLanguage('cs-CZ');
           }
                    
         };
@@ -207,6 +214,14 @@ export const useRecorderStore = defineStore("recorder", () => {
     sendSurveyQuestionData();
   };
 
+  const changeASRLanguage = (language) => {
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ language }));
+    }
+  };
+
+
   const allowRecording = () => {
     allowedRecording.value = true;
   };
@@ -239,5 +254,6 @@ export const useRecorderStore = defineStore("recorder", () => {
     continueWithNext,
     student_answer,
     setEmitFunction,
+    changeASRLanguage,
   };
 });

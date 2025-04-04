@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia';
 import { loginStudent, loginAdmin } from '@/api/apiClient';
 import { useToastStore } from '@/stores/useToastStore';
+import { dictionary } from '@/utils/dictionary';
+import { useLanguageStore } from './useLanguageStore';
+
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -10,6 +13,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: false,
     errorMessage: '',
     inactivityTimeout: null,
+
   }),
   actions: {
     async login(username, passphrase, router, isLogin, isAdmin) {
@@ -34,9 +38,10 @@ export const useAuthStore = defineStore('auth', {
 
           this.startInactivityTimer(router);
 
+          const langStore = useLanguageStore();
           const toastStore = useToastStore();
           toastStore.addToast({
-            message: isLogin ? 'Přihlášení proběhlo úspěšně' : 'Registrace proběhla úspěšně', 
+            message: isLogin ? dictionary[langStore.language].loginSuccess : dictionary[langStore.language].registrationSuccess, 
             type: 'success',
             visible: true,
           });
@@ -45,10 +50,10 @@ export const useAuthStore = defineStore('auth', {
           
 
         } else {
-          this.errorMessage = result.error;
+          this.errorMessage = langStore.language == 'cs' ? result.error : dictionary[langStore.language].invalidCredentials;
         }
       } catch (error) {
-        this.errorMessage = 'Něco se pokazilo. Zkuste to znovu později.';
+        this.errorMessage = dictionary[langStore.language].somethingWentWrong;
       }
     },
     logout(router) {
@@ -64,8 +69,9 @@ export const useAuthStore = defineStore('auth', {
 
 
       const toastStore = useToastStore();
+      const langStore = useLanguageStore();
       toastStore.addToast({
-        message: 'Odhlášení proběhlo úspěšně',
+        message: dictionary[langStore.language].logoutSuccess,
         type: 'info',
         visible: true,
       });
@@ -96,8 +102,9 @@ export const useAuthStore = defineStore('auth', {
         this.logout(router);
         
         const toastStore = useToastStore();
+        const langStore = useLanguageStore();
         toastStore.addToast({
-          message: 'Byli jste odhlášeni z důvodu neaktivity', 
+          message: dictionary[langStore.language].inactivityLogout, 
           type: 'info',
           visible: true,
         });

@@ -1,5 +1,7 @@
 <script setup>
 import { defineProps, ref, computed, defineEmits } from 'vue';
+import { useLanguageStore } from '@/stores/useLanguageStore';
+import { getSkillName } from '@/utils/dictionary';
 
 const props = defineProps({
   operation: {
@@ -14,6 +16,7 @@ const props = defineProps({
 
 const isSelected = ref(false);
 const emit = defineEmits(['updateExampleCount']);
+const langStore = useLanguageStore();
 
 
 const select = () => {
@@ -37,7 +40,6 @@ const removeFromSelection = (subtopic) => {
   }
 };
 
-// Computed styles
 const buttonClasses = computed(() => ({
   'text-white bg-primary border-primary shadow-lg font-semibold transform scale-105': isSelected.value,
   'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300': !isSelected.value,
@@ -47,6 +49,6 @@ const buttonClasses = computed(() => ({
 
 <template>
   <button @click="select" :class="buttonClasses" class="hover:shadow-md active:scale-95 text-xl">
-    {{ operation.name }}
+    {{ getSkillName(operation.name, langStore.language) }}
   </button>
 </template>

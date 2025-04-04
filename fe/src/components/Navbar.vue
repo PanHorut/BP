@@ -3,16 +3,30 @@ import { RouterLink, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useLanguageStore } from '@/stores/useLanguageStore';
+import { useRecorderStore } from '@/stores/useRecorderStore';
+import { dictionary } from '@/utils/dictionary';
 
 // Auth Store
 const authStore = useAuthStore();
 const router = useRouter();
+const langStore = useLanguageStore();
+const recorderStore = useRecorderStore();
 
 // Computed Property for Auth State
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
 // Mobile Menu State
 const isMenuOpen = ref(false);
+
+const changeLanguage = () => {
+  langStore.setLanguage();
+  if(langStore.language === 'en') {
+    recorderStore.changeASRLanguage('en-US');
+  } else {
+    recorderStore.changeASRLanguage('cs-CZ');
+  }
+};
 </script>
 
 <template>
@@ -24,7 +38,7 @@ const isMenuOpen = ref(false);
           <RouterLink to="/">
             <!-- Logo: Icon for mobile, text for md+ -->
             <img src="/app.ico" alt="App Logo" class="w-14 h-14 md:hidden" />
-            <h1 class="text-4xl font-black tracking-wide text-white hidden md:block">DRILLOVAČKA</h1>
+            <h1 class="text-4xl font-black tracking-wide text-white hidden md:block">{{ dictionary[langStore.language].logo }}</h1>
           </RouterLink>
         </div>
 
@@ -39,18 +53,22 @@ const isMenuOpen = ref(false);
         <!-- Desktop Menu -->
         <div class="hidden md:flex items-center space-x-8 text-2xl font-semibold">
           <template v-if="!isAuthenticated">
-            <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Přihlásit se</RouterLink>
+            <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{dictionary[langStore.language].login}}</RouterLink>
+            <button @click="changeLanguage">{{langStore.language == 'cs' ? '🇬🇧' : '🇨🇿' }}</button>
           </template>
 
           <template v-else-if="authStore.role == 'admin'">
             <RouterLink to="/tasks" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Příklady</RouterLink>
             <RouterLink to="/skill-creator" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Dovednosti</RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Odhlásit se</button> 
+            
           </template>
 
           <template v-else>
-            <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Můj účet</RouterLink>
-            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Odhlásit se</button>
+            <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{dictionary[langStore.language].profile}}</RouterLink>
+            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{dictionary[langStore.language].logout}}</button>
+            <button @click="changeLanguage">{{langStore.language == 'cs' ? '🇬🇧' : '🇨🇿' }}</button>
+
           </template>
         </div>
       </div>
@@ -59,7 +77,9 @@ const isMenuOpen = ref(false);
       <transition name="fade">
         <div v-if="isMenuOpen" class="md:hidden flex flex-col items-center bg-primary text-white py-4 space-y-4 text-xl">
           <template v-if="!isAuthenticated">
-            <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Přihlásit se</RouterLink>
+            <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{dictionary[langStore.language].login}}</RouterLink>
+            <button @click="changeLanguage">{{langStore.language == 'cs' ? '🇬🇧' : '🇨🇿' }}</button>
+
           </template>
 
           <template v-else-if="authStore.role == 'admin'">
@@ -69,8 +89,10 @@ const isMenuOpen = ref(false);
           </template>
 
           <template v-else>
-            <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Můj účet</RouterLink>
-            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">Odhlásit se</button>
+            <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{dictionary[langStore.language].profile}}</RouterLink>
+            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">{{dictionary[langStore.language].logout}}</button>
+            <button @click="changeLanguage">{{langStore.language == 'cs' ? '🇬🇧' : '🇨🇿' }}</button>
+
           </template>
         </div>
       </transition>

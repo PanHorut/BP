@@ -30,6 +30,7 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         self.message_queue = asyncio.Queue()
         self.loop = asyncio.get_event_loop()
         self.executor = ThreadPoolExecutor(max_workers=1)
+        self.language = "cs-CZ"#  "en-US" 
         
         self.metadata = {}
         self.audio_format = None  # Will be set to 'pcm' or 'webm' based on client metadata
@@ -56,6 +57,13 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                 # Check if format is specified in metadata
                 if 'format' in new_metadata:
                     self.audio_format = new_metadata['format']
+                
+                if 'language' in new_metadata:
+                    self.language = new_metadata['language']
+                    print(f"Language changed to: {self.language}")
+                    self.speech_recognizer.stop_continuous_recognition()
+                    self.speech_recognizer, self.stream = self.create_speech_recognizer()
+                
             except json.JSONDecodeError:
                 print("Invalid metadata received.")
         elif bytes_data:
@@ -80,12 +88,13 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         speech_recognizer = speechsdk.SpeechRecognizer(
             speech_config=speech_config,
             audio_config=audio_config,
-            language="cs-CZ"
+            language=self.language
         )
 
         def recognized_cb(evt: speechsdk.SpeechRecognitionEventArgs):
             if evt.result.text and self.speech_data:
                 # Convert raw PCM data to WAV format for storage
+                print(evt.result.text)
                 wav_data = self.convert_pcm_to_wav(self.speech_data)
 
                 student_id = self.metadata.get('student_id', 'unknown')
@@ -128,8 +137,17 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                 duration = calculate_duration(record_date)
                 student_answer = evt.result.text
 
-                skip_words = ["nevím", "netuším", "přeskočit", "další", "přeskoč"]
-                finish_words = ["konec", "ukončit", "stačí", "hotovo", "skončit", "dost"]
+                skip_wordsCS = ["přeskočit", "další", "přeskoč", "dál"]
+                skip_wordsEN = ["skip", "next", "continue"]
+                finish_wordsCS = ["konec", "ukončit", "stačí", "hotovo", "skončit", "dost"]
+                finish_wordsEN = ["finish", "end", "stop", "done"]
+
+                if(self.language == "cs-CZ"):
+                    skip_words = skip_wordsCS
+                    finish_words = finish_wordsCS
+                else:
+                    skip_words = skip_wordsEN
+                    finish_words = finish_wordsEN
 
                 if any(word in student_answer.lower() for word in skip_words):
                     factory = RequestFactory()
@@ -168,8 +186,8 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                     }
 
                 else:
-                    
-                    if input_type == 'INLINE':
+                    print(input_type)
+                    if input_type == 'INLINE' or input_type == 'WORD':
                         isCorrect, continue_with_next, student_answer = InlineSpeechAnswerChecker.verifyAnswer(
                             student_id, example_id, record_date, duration, student_answer
                         )
