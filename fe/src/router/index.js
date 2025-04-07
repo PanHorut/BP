@@ -16,6 +16,15 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
+      meta: { lang: 'cs' }
+
+    },
+
+    {
+      path: '/en',
+      name: 'home-en',
+      component: HomeView,
+      meta: { lang: 'en' }
     },
 
     {

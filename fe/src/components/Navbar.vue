@@ -6,10 +6,13 @@ import { useRouter } from 'vue-router';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 import { dictionary } from '@/utils/dictionary';
+import csFlag from '@/assets/img/cs-flag.png';
+import enFlag from '@/assets/img/en-flag.png';
 
 // Auth Store
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 const langStore = useLanguageStore();
 const recorderStore = useRecorderStore();
 
@@ -20,13 +23,17 @@ const isAuthenticated = computed(() => authStore.isAuthenticated);
 const isMenuOpen = ref(false);
 
 const changeLanguage = () => {
-  langStore.setLanguage();
-  if(langStore.language === 'en') {
+  langStore.toggleLanguage();
+  if (langStore.language === 'en') {
     recorderStore.changeASRLanguage('en-US');
   } else {
     recorderStore.changeASRLanguage('cs-CZ');
   }
 };
+
+const handleLogoClick = () => {
+  if(langStore.language == 'en') router.push({ path: '/en' });
+}
 </script>
 
 <template>
@@ -35,7 +42,8 @@ const changeLanguage = () => {
       <div class="flex h-20 items-center justify-between">
         <!-- Left: Logo (Switches on small screens) -->
         <div class="flex items-center">
-          <RouterLink to="/">
+          <RouterLink to="/" @click="handleLogoClick">
+
             <!-- Logo: Icon for mobile, text for md+ -->
             <img src="/app.ico" alt="App Logo" class="w-14 h-14 md:hidden" />
             <h1 class="text-4xl font-black tracking-wide text-white hidden md:block">{{ dictionary[langStore.language].logo }}</h1>
@@ -54,7 +62,9 @@ const changeLanguage = () => {
         <div class="hidden md:flex items-center space-x-8 text-2xl font-semibold">
           <template v-if="!isAuthenticated">
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{dictionary[langStore.language].login}}</RouterLink>
-            <button @click="changeLanguage">{{langStore.language == 'cs' ? '🇬🇧' : '🇨🇿' }}</button>
+            <button @click="changeLanguage">
+              <img :src="langStore.language == 'cs' ? enFlag : csFlag" alt="Language Flag" class="w-8 h-8 ml-2" />
+            </button>
           </template>
 
           <template v-else-if="authStore.role == 'admin'">
@@ -67,7 +77,9 @@ const changeLanguage = () => {
           <template v-else>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{dictionary[langStore.language].profile}}</RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{dictionary[langStore.language].logout}}</button>
-            <button @click="changeLanguage">{{langStore.language == 'cs' ? '🇬🇧' : '🇨🇿' }}</button>
+            <button @click="changeLanguage">
+              <img :src="langStore.language == 'cs' ? enFlag : csFlag" alt="Language Flag" class="w-8 h-8 ml-2" />
+            </button>
 
           </template>
         </div>
@@ -78,7 +90,9 @@ const changeLanguage = () => {
         <div v-if="isMenuOpen" class="md:hidden flex flex-col items-center bg-primary text-white py-4 space-y-4 text-xl">
           <template v-if="!isAuthenticated">
             <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{dictionary[langStore.language].login}}</RouterLink>
-            <button @click="changeLanguage">{{langStore.language == 'cs' ? '🇬🇧' : '🇨🇿' }}</button>
+            <button @click="changeLanguage">
+              <img :src="langStore.language == 'cs' ? enFlag : csFlag" alt="Language Flag" class="w-8 h-8 ml-2" />
+            </button>
 
           </template>
 
@@ -91,7 +105,9 @@ const changeLanguage = () => {
           <template v-else>
             <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{dictionary[langStore.language].profile}}</RouterLink>
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">{{dictionary[langStore.language].logout}}</button>
-            <button @click="changeLanguage">{{langStore.language == 'cs' ? '🇬🇧' : '🇨🇿' }}</button>
+            <button @click="changeLanguage">
+              <img :src="langStore.language == 'cs' ? enFlag : csFlag" alt="Language Flag" class="w-8 h-8 ml-2" />
+            </button>
 
           </template>
         </div>

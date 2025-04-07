@@ -1,7 +1,7 @@
 <script setup>
 import { defineProps, computed, ref } from 'vue';
 import { sendSurveyAnswer } from '@/api/apiClient';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import {dictionary} from '@/utils/dictionary';
 
@@ -33,6 +33,8 @@ const props = defineProps({
 })
 
 const langStore = useLanguageStore();
+const router = useRouter();
+
 
 const total = computed(() => {
     return props.skipped + props.noMistakes + props.oneMistake + props.twoMistakes + props.threeMistakes;
@@ -73,11 +75,15 @@ const emojiRatings = ref([
 
 
 const handleEmojiSelection = async () => {
+    if(langStore.language == 'en') router.push({ path: '/en' });
+
     if(selectedEmoji.value === null) {
         return;
-    }
+    }    
 
     await sendSurveyAnswer('summary', 'Jak se ti líbilo procvičování s touto aplikací?', emojiRatings.value[selectedEmoji.value].label, props.topics);  
+
+    
 
 }
 

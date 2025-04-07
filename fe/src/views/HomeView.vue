@@ -1,14 +1,31 @@
 <script setup>
 import Topics from '@/components/MainMenu/Topics.vue';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useRecorderStore } from '@/stores/useRecorderStore';
+import { useLanguageStore } from '@/stores/useLanguageStore';
 
 // Auth Store
 const authStore = useAuthStore();
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
 const router = useRouter();
+const route = useRoute();
+const langStore = useLanguageStore();
+const recorderStore = useRecorderStore();
+
+
+onMounted(() => {
+  const lang = route.meta.lang;
+  langStore.setLanguage(lang);
+
+  if(langStore.language === 'en') {
+    recorderStore.changeASRLanguage('en-US');
+  } else {
+    recorderStore.changeASRLanguage('cs-CZ');
+  }
+});
 </script>
 
 <template>

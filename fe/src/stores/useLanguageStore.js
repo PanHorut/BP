@@ -4,9 +4,17 @@ import { ref } from 'vue';
 export const useLanguageStore = defineStore('language', () => {
   const language = ref('cs');
 
-  function setLanguage() {
-    language.value = language.value === 'cs' ? 'en' : 'cs';
+  function setLanguage(lang) {
+
+    language.value = lang;
 }
 
-  return { language, setLanguage };
+  function toggleLanguage() {
+    language.value = language.value === 'cs' ? 'en' : 'cs';
+  }
+  return { 
+    language, 
+    setLanguage,
+    toggleLanguage 
+    };
 });

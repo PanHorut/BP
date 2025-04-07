@@ -3,12 +3,17 @@ import Navbar from '@/components/Navbar.vue';
 import Footer from '@/components/Footer.vue';
 import { RouterView } from 'vue-router';
 import ToastManager from '@/components/Toast/ToastManager.vue';
-import { onMounted, onBeforeUnmount } from 'vue';
+import { onMounted, onBeforeUnmount, watch } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { useLanguageStore } from './stores/useLanguageStore';
+
 
 const authStore = useAuthStore();
+const langStore = useLanguageStore();
 const router = useRouter();
+const route = useRoute();
+
 
 const resetInactivity = () => {
   if (authStore.isAuthenticated) {
@@ -25,6 +30,18 @@ onBeforeUnmount(() => {
   window.removeEventListener('mousemove', resetInactivity);
   window.removeEventListener('keydown', resetInactivity);
 });
+
+watch(
+   () => langStore.language,
+  () => {
+    if (langStore.language === 'en') {
+      document.title = 'Drillapp';
+    } else {
+      document.title = 'Drillovačka';
+    }
+  },
+  { immediate: true }
+);
 
 </script>
 
