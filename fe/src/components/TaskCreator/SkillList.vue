@@ -116,7 +116,6 @@ const removeSkillPath = (pathIndex) => {
 
 
 const importSkills = async (skills) => {
-  console.log(skills);  
   const skillIds = skills.map(skill => skill.id);  // Extract only the IDs
   const paths = await getSandboxSkillPaths(skillIds); // Get paths as ID arrays
 

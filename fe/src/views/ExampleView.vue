@@ -1,7 +1,6 @@
 <script setup>
 import Example from '@/components/Example.vue';
 import ProgressBar from '@/components/Example/ProgressBar.vue';
-import SpecialCharsBar from '@/components/Example/SpecialCharsBar.vue';
 import { ref, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { getExamples } from '@/api/apiClient';
@@ -13,6 +12,8 @@ import Spinner from '@/components/Spinner.vue';
 import Summary from '@/components/Example/Summary.vue';
 import Survey from '@/components/Example/Survey.vue';
 import { useRecorderStore } from '@/stores/useRecorderStore';
+import { useLanguageStore } from '@/stores/useLanguageStore';
+import {dictionary} from '@/utils/dictionary';
 
 const examples = ref([]); 
 const exampleComponent = ref(null);  
@@ -44,6 +45,7 @@ const showSurvey = ref(false);
 const showAnswer = ref(false);
 
 const recorderStore = useRecorderStore();
+const langStore = useLanguageStore();
 
 const correctSound = new Audio(correctSoundSrc);
 const wrongSound = new Audio(wrongSoundSrc);
@@ -131,8 +133,8 @@ const displayNext = async (data) => {
     sessionStorage.setItem("examplesCounted", examplesCounted.value.toString());
 
 
-    // show survey every 10th example
-    if(examplesCounted.value % 10 === 0 ){
+    // show survey every 5th example for Excel@FIT
+    if(examplesCounted.value % 5 === 0 ){
       showSurvey.value = true;
     }
     
@@ -197,10 +199,18 @@ onMounted(() => {
 </script>
 
 <template>
-    <!--<SpecialCharsBar v-if="examples.length > curr_index && !showSummary"></SpecialCharsBar>-->
+    <Spinner v-if="loading" class="pt-48"/>
+    <div v-if="examples.length === 0 && !loading" class="flex flex-col justify-center items-center">
+      <h1 class="text-xl md:text-3xl font-bold text-center pt-20 text-primary mb-8">Pro tuto kombinaci dovedností zatím neexistují příklady :(</h1>
+
+      <RouterLink to="/"
+                class="text-center text-xl md:text-3xl bg-secondary hover:bg-white text-white hover:text-secondary border-4 border-secondary rounded-xl font-semibold px-3 py-2 md:px-4 md:py-2 cursor-pointer transition">
+                {{ dictionary[langStore.language].backtoMainMenu }}
+      </RouterLink>
+    </div>
     <div v-if="examples.length > curr_index && !showSummary && !showSurvey" class="flex-col items-center justify-center">
       <ProgressBar :totalExamples="examples.length" :finishedExamples="curr_index"></ProgressBar>
-      <Spinner v-if="loading" class="mt-48"/>
+      
     </div>
     <div class="flex items-center justify-center">
              

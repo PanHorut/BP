@@ -20,14 +20,6 @@ class ExampleList(generics.ListCreateAPIView):
     queryset = Example.objects.all()
     serializer_class = ExampleSerializer
 
-class SkillList(generics.ListCreateAPIView):
-    queryset = Skill.objects.all()
-    serializer_class = SkillSerializer
-
-class ExampleSkillList(generics.ListCreateAPIView):
-    queryset = ExampleSkill.objects.all()
-    serializer_class = ExampleSkillSerializer
-
 def create_skill_relations(skill_ids):
 
     skills = Skill.objects.filter(id__in=skill_ids)
@@ -213,29 +205,6 @@ def edit_task(request):
     # Return all updated examples
     return Response({"updated_examples": updated_examples}, status=status.HTTP_200_OK)
 
-
-@api_view(['GET'])
-def get_all_skills(request):
-    skills = Skill.objects.filter(deleted=False)
-    serializer = SkillSerializer(skills, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-@api_view(['GET'])
-def get_parent_skills(request):
-
-    parent_skills = Skill.objects.filter(parent_skill__isnull=True, deleted=False)
-    serializer = SkillSerializer(parent_skills, many=True)
-    
-    return Response(serializer.data, status=200)
-
-@api_view(['GET'])
-def get_leaf_skills(request):
-    leaf_skills = Skill.objects.filter(subskills__isnull=True, deleted=False)
-    
-    serializer = SkillSerializer(leaf_skills, many=True)
-    
-    return Response(serializer.data, status=200)
-
 @api_view(['GET'])
 def get_skill(request, skill_id):
     try:
@@ -414,21 +383,39 @@ def skip_example(request):
 
 @api_view(['GET'])
 def get_tasks(request):
-    example_skills = Prefetch('exampleskill_set', queryset=ExampleSkill.objects.select_related('skill'))
-    example_steps = Prefetch('steps', queryset=Step.objects.order_by('order'))  # Order by 'order' field
-
+    # Prefetch related data
     tasks = Task.objects.prefetch_related(
         'example_set__answers',          # Fetch related answers
-        'example_set__exampleskill_set', # Prefetch related ExampleSkills
-        'example_set__steps'          # Prefetch related Steps
+        'example_set__exampleskill_set__skill', # Prefetch related ExampleSkills and their Skills
+        'example_set__steps'            # Prefetch related Steps
     )
     
     # Prepare the response data
-    data = [
-        {
+    data = []
+    for task in tasks:
+        # Get skills for the task (same for all examples)
+        skills = []
+        # Use the first example to get skills, since all examples share the same skills
+        first_example = task.example_set.first()
+        if first_example:
+            skills = [
+                {
+                    "id": example_skill.skill.id,
+                    "name": example_skill.skill.name,
+                    "height": example_skill.skill.height,
+                    "skill_type": example_skill.skill.skill_type,
+                    "parent_skill": example_skill.skill.parent_skill.id if example_skill.skill.parent_skill else None,
+                    "related_skills": list(example_skill.skill.related_skills.values_list('id', flat=True))
+                }
+                for example_skill in first_example.exampleskill_set.all()
+            ]
+        
+        # Build task data
+        task_data = {
             "task_id": task.id,
             "task_name": task.name,
             "task_form": task.form,
+            "skills": skills,  # Add skills at task level
             "examples": [
                 {
                     "example_id": example.id,
@@ -440,17 +427,6 @@ def get_tasks(request):
                             "answer_text": answer.answer
                         }
                         for answer in example.answers.all()
-                    ],
-                    "skills": [
-                        {
-                            "id": example_skill.skill.id,
-                            "name": example_skill.skill.name,
-                            "height": example_skill.skill.height,
-                            "skill_type": example_skill.skill.skill_type,
-                            "parent_skill": example_skill.skill.parent_skill.id if example_skill.skill.parent_skill else None,
-                            "related_skills": list(example_skill.skill.related_skills.values_list('id', flat=True))
-                        }
-                        for example_skill in example.exampleskill_set.all()
                     ],
                     "steps": [
                         {
@@ -464,8 +440,7 @@ def get_tasks(request):
                 for example in task.example_set.all()
             ]
         }
-        for task in tasks
-    ]
+        data.append(task_data)
     
     # Return the data as JSON
     return JsonResponse(data, safe=False)
@@ -665,7 +640,10 @@ def get_related_skills_tree(request, skill_id):
         return Response(tree)  # Return JSON tree response
     except Skill.DoesNotExist:
         return Response({"error": "Skill not found"}, status=404)
-    
+
+
+
+
 @api_view(['GET'])
 def get_children_skills_tree(request, skill_id):
     withCounts = request.GET.get('with_counts', 'false') == 'true'
@@ -890,58 +868,6 @@ def attempts_over_time(request):
         return Response(response_data, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-from django.db.models import Avg, Count
-
-@api_view(['GET'])
-def average_duration(request):
-    student_id = request.GET.get('student_id', 1)  # Default to student 1 if not provided
-
-    # Aggregate data: Group by date and calculate the average duration
-    data = (
-        StudentExample.objects
-        .filter(student_id=student_id)
-        .values('date__date')  # Group by date only (without time)
-        .annotate(avg_duration=Avg('duration'))  # Calculate average
-        .order_by('date__date')  # Sort by date
-    )
-
-    # Convert queryset to list of dictionaries
-    result = [
-        {"date": item["date__date"].strftime("%Y-%m-%d"), "avg_duration": round(item["avg_duration"], 2)}
-        for item in data
-    ]
-
-    return JsonResponse(result, safe=False)
-
-from django.utils.timezone import make_aware
-from datetime import datetime, timedelta
-
-@api_view(['GET'])
-def counted_examples(request):
-    student_id = request.GET.get('student_id')
-    if not student_id:
-        return JsonResponse({"error": "Missing student_id"}, status=400)
-
-    # Get the date range (from 20.2 to 28.2)
-    start_date = make_aware(datetime(2025, 2, 20))
-    end_date = make_aware(datetime(2025, 2, 28))
-
-    # Query counted examples per day
-    data = (
-        StudentExample.objects.filter(student_id=student_id, date__date__range=[start_date, end_date])
-        .values('date__date')  # Group by day only (ignore time)
-        .annotate(example_count=Count('id'))
-        .order_by('date__date')
-    )
-
-    # Format response
-    response_data = [
-        {"date": entry["date__date"].strftime("%Y-%m-%d"), "example_count": entry["example_count"]}
-        for entry in data
-    ]
-
-    return JsonResponse(response_data, safe=False)
 
 @api_view(['GET'])
 def get_paths_for_sandbox(request):

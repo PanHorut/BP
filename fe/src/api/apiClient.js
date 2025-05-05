@@ -2,7 +2,7 @@ import axios from 'axios';
 import qs from 'qs'; 
 
 const apiClient = axios.create({
-  baseURL:  'https://drillovacka.applikuapp.com/api/',// 'https://bp-production-37c0.up.railway.app/api/',  'http://localhost:8000/api/'
+  baseURL:   'https://drillovacka.applikuapp.com/api/',// 'https://bp-production-37c0.up.railway.app/api/',   'http://localhost:8000/api/'
   headers: {
     //'Content-Type': 'application/json',
   },
@@ -94,17 +94,6 @@ export const postTask = async (examples, selectedSkills, taskName, taskId, taskF
   }
 };
 
-export const getParentSkills = async () => {
-  try {
-    const response = await apiClient.get('parent-skills/');
-    return response.data
-  
-  } catch (error) {
-    console.error("Error fetching skills:", error)
-  }
-
-}
-
 export const getSkill = async (id) => {
   try {
     const response = await apiClient.get(`skill/${id}/`);
@@ -131,16 +120,6 @@ export const getExamples = async (topics) => {
     console.error("Error fetching examples:", error);
   }
 };
-
-export const getLeafSkills = async () => {
-  try {
-    const response = await apiClient.get('leaf-skills/'); 
-    return response.data;
-    
-  } catch (error) {
-    console.error("Error fetching skills:", error)
-  }
-}
 
 export const getTasks = async () => {
   try {

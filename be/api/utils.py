@@ -3,10 +3,6 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from asgiref.sync import sync_to_async
 
-
-
-
-# gets the height of a node in a tree of skills
 def get_height(id):
     skill = Skill.objects.get(id=id)
     
@@ -16,24 +12,36 @@ def get_height(id):
         distance += 1
     return distance
 
-# retuns the number of examples that have all the skills in the list
 def examples_with_skills(skill_ids):
-
+    """
+    Return the count of examples that have all the skills provided in skill_ids.
+    Optimized to reduce database queries.
+    """
     try:
-        skills = Skill.objects.filter(id__in=skill_ids)
+        if not skill_ids:
+            return 0
+            
+        # Convert to set for faster lookups
+        skill_ids_set = set(skill_ids)
         
-        examples = ExampleSkill.objects.filter(skill__in=skills).values('example').distinct()
+        # Get all example IDs and their associated skills in one query
+        example_skills = ExampleSkill.objects.filter(skill__in=skill_ids).values('example', 'skill')
         
-        valid_examples = []
-
-        for example in examples:
-            example_id = example['example']
-            linked_skills = ExampleSkill.objects.filter(example_id=example_id).values_list('skill', flat=True)
-
-            if set(skill_ids).issubset(linked_skills):
-                valid_examples.append(example_id)
-
-        return len(valid_examples)
+        # Group skills by example
+        example_to_skills = {}
+        for item in example_skills:
+            example_id = item['example']
+            skill_id = item['skill']
+            
+            if example_id not in example_to_skills:
+                example_to_skills[example_id] = set()
+            example_to_skills[example_id].add(skill_id)
+        
+        # Count examples that have all required skills
+        valid_count = sum(1 for skills in example_to_skills.values() 
+                         if skill_ids_set.issubset(skills))
+                         
+        return valid_count
 
     except Skill.DoesNotExist:
         return 0

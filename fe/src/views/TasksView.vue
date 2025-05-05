@@ -84,7 +84,7 @@ const handleDeleteTask = async () => {
 const handleEditTask = (taskIndex) => {
   const taskStore = useTaskStore();
   const task = tasks.value[taskIndex];
-  const skills = tasks.value[taskIndex].examples[0].skills;
+  const skills = task.skills;
   taskStore.setTask(task, skills);
 
   router.push('/sandbox');
@@ -113,7 +113,7 @@ const handleEditTask = (taskIndex) => {
 
           <!-- Render skills only for the first example -->
           <span v-if="task.examples.length > 0">
-            <span v-for="skill in task.examples[0].skills" :key="skill.id" class="mr-2 text-sm text-gray-600">
+            <span v-for="skill in task.skills" :key="skill.id" class="mr-2 text-sm text-gray-600">
               {{ skill.name }}
             </span>
           </span>

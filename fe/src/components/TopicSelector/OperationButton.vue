@@ -41,9 +41,9 @@ const removeFromSelection = (subtopic) => {
 };
 
 const buttonClasses = computed(() => ({
-  'text-white bg-primary border-primary shadow-lg font-semibold transform scale-105': isSelected.value,
+  'text-white bg-primary border-primary shadow-lg font-semibold transform': isSelected.value,
   'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300': !isSelected.value,
-  'px-5 py-3 rounded-full border transition-all': true
+  'px-2 py-3 rounded-full border transition-all': true
 }));
 </script>
 
