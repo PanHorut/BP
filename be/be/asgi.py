@@ -1,5 +1,12 @@
 """
-ASGI config for be project.
+================================================================================
+ Module: asgi.py
+ Description:
+        ASGI configuration. Sets up protocol routing for HTTP and WebSocket
+        connections using Django Channels.
+
+ Author: Dominik Horut (xhorut01)
+================================================================================
 """
 
 import os

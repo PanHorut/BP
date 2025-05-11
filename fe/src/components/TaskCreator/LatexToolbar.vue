@@ -1,6 +1,16 @@
+<!--
+================================================================================
+ Component: LatexToolbar.vue
+ Description:
+        Allows admin to insert Latex symbols into the input fields
+ Author: Dominik Horut (xhorut01)
+================================================================================
+-->
+
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
+// Defined latex symbols
 const frac = computed(() => `\\(\\frac{a}{b}\\)`);
 const pwr2 = computed(() => `\\(a^2\\)`);
 const pwr3 = computed(() => `\\(a^3\\)`);
@@ -17,39 +27,43 @@ const real = computed(() => `\\(\\mathbb{R}\\)`);
 const times = computed(() => `\\(\\cdot\\)`);
 const mutliline = computed(() => `\\(\\begin{align*} a = b \\\\ c = d \\end{align*}\\)`); 
 
+// Render latex
 function renderMathJax() {
   if (window.MathJax) {
     window.MathJax.typeset();
   }
 }
 
+// Hide toolbar on small screens
 const isHidden = ref(window.innerWidth < 1100);
 
+// Check window size and hide toolbar if necessary
 const checkWindowSize = () => {
   isHidden.value = window.innerWidth < 1100;
 };
 
-
+// Watch for window resize events
 onMounted(() => {
   renderMathJax();
   window.addEventListener('resize', checkWindowSize);
   checkWindowSize(); 
 });
 
+// Cleanup event listener on component unmount
 onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize);
 });
 
-
-
-
+// Toggle toolbar visibility
 const toggleToolbar = () => {
   isHidden.value = !isHidden.value;
 }
 
+// Insert latex into currently focused input field
 function insertTextIntoActiveInput(text) {
   const activeElement = document.activeElement;
 
+  // Check if the active element is an input or textarea
   if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
     const start = activeElement.selectionStart;
     const end = activeElement.selectionEnd;
@@ -57,7 +71,6 @@ function insertTextIntoActiveInput(text) {
     const value = activeElement.value;
     activeElement.value = value.slice(0, start) + text + value.slice(end);
     activeElement.selectionStart = activeElement.selectionEnd = start + text.length;
-
     activeElement.dispatchEvent(new Event('input'));
   }
 }
@@ -66,9 +79,11 @@ function insertTextIntoActiveInput(text) {
 <template>
     <div @mousedown.prevent :class="['fixed left-0 h-full border-r-4 border-t-4 border-primary w-56 transition-transform duration-300', 
               { '-translate-x-48': isHidden, 'translate-x-0': !isHidden }]">
+
         <div class="flex flex-col items-center">
             <div class="text-center text-primary text-3xl font-black my-4">LaTeX zápis</div>
-            <!-- Render frac using v-html for MathJax processing and center content -->
+            
+            <!-- Buttons for each symbol -->
             <div class="grid grid-cols-2 justify-center gap-4">
 
             <button 
@@ -159,7 +174,10 @@ function insertTextIntoActiveInput(text) {
               v-html="mutliline">
             </button>
         </div>
+
         </div>
+
+        <!-- Button to toggle toolbar visibility -->
         <div 
           @click="toggleToolbar" 
           class="fixed top-1/2 left-56 -translate-y-1/2 ml-2 bg-primary text-white text-2xl  cursor-pointer font-bold w-12 h-12 rounded-full flex items-center justify-center"
@@ -169,5 +187,3 @@ function insertTextIntoActiveInput(text) {
 
     </div>
 </template>
-
-

@@ -1,3 +1,12 @@
+<!--
+================================================================================
+ Component: FractionInput.vue
+ Description:
+        Input fields for answers in fraction form.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+-->
+
 <script setup>
 import { ref, onMounted, defineExpose, defineEmits, watch } from 'vue';
 import { useRecorderStore } from '@/stores/useRecorderStore';
@@ -11,16 +20,19 @@ const recorderStore = useRecorderStore();
 
 const emits = defineEmits(['answerSent']); 
 
+// Return input fields value to parent component - Example
 function getAnswer() {
     emits('answerSent', numerator.value, denominator.value);
 }
 
+// Focus on the numerator input field when the component is mounted
 onMounted(() => {
     if (numeratorInput.value && !recorderStore.isRecording) {
         numeratorInput.value.focus();
     }
 });
 
+// Focus on the input field when mouse is over it
 function handleMouseOver(refName) {
     if (refName == numeratorInput.value) {
         numeratorInput.value.focus();
@@ -29,6 +41,7 @@ function handleMouseOver(refName) {
     }
 }
 
+// Handle keydown events for navigating between input fields
 function handleKeydown(event) {
     if (event.key === 'ArrowDown' && event.target === numeratorInput.value) {
         denominatorInput.value.focus();
@@ -37,14 +50,15 @@ function handleKeydown(event) {
     }
 }
 
+// Clear input fields
 const clearInput = () => {
     numerator.value = '';
     denominator.value = '';
-    
 }
 
 defineExpose({getAnswer, clearInput});
 
+// Display users answer by voice if any
 watch(
     () => [recorderStore.isRecording, recorderStore.student_answer],
     ([isRecording, studentAnswer]) => {
@@ -63,6 +77,8 @@ watch(
 
 <template>
     <div class="flex flex-col items-center justify-center">
+
+        <!-- Numerator input -->
         <input
             type="text"
             v-model="numerator"
@@ -73,9 +89,11 @@ watch(
             placeholder="?"
             inputmode="numeric"
         />
-    
+        
+        <!-- Fraction line -->
         <hr class="w-32 md:w-48 my-2 bg-black border-black border-2 ">
         
+        <!-- Denominator input -->
         <input
             type="text"
             v-model="denominator"
@@ -85,6 +103,7 @@ watch(
             class="text-start w-32 md:w-48 text-6xl md:text-8xl border border-gray-300 self-end p-0"
             placeholder="?"
             inputmode="numeric"
-        />    
+        />   
+
     </div>
 </template>

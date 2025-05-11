@@ -1,9 +1,18 @@
+/**
+ * ================================================================================
+ * File: useAuthStore.js
+ * Description:
+ *       Pinia store for managing authentication state, login/logout actions, and session handling.
+ * Author: Dominik Horut (xhorut01)
+ * ================================================================================
+ */
+
+
 import { defineStore } from 'pinia';
 import { loginStudent, loginAdmin } from '@/api/apiClient';
 import { useToastStore } from '@/stores/useToastStore';
 import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from './useLanguageStore';
-
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -19,14 +28,20 @@ export const useAuthStore = defineStore('auth', {
     async login(username, passphrase, router, isLogin, isAdmin) {
       try {
         let result = null;
+
+        
         if(isAdmin){
+          // Admin tries to login
           result = await loginAdmin(username, passphrase);
         } else{
+          // User tries to login
           result = await loginStudent(username, passphrase);
         }
         
+        // Successful login
         if (result.status === 200) {
-          // Store user info and token
+         
+          // Save data in the store
           this.name = username;
           this.id = result.data.id;
           this.role = result.data.role;
@@ -40,6 +55,7 @@ export const useAuthStore = defineStore('auth', {
 
           const langStore = useLanguageStore();
           const toastStore = useToastStore();
+
           toastStore.addToast({
             message: isLogin ? dictionary[langStore.language].loginSuccess : dictionary[langStore.language].registrationSuccess, 
             type: 'success',
@@ -47,8 +63,8 @@ export const useAuthStore = defineStore('auth', {
           });
           
           router.push({ name: 'home' });
-          
-
+        
+        // Unsuccessful login
         } else {
           this.errorMessage = langStore.language == 'cs' ? result.error : dictionary[langStore.language].invalidCredentials;
         }
@@ -56,7 +72,10 @@ export const useAuthStore = defineStore('auth', {
         this.errorMessage = dictionary[langStore.language].somethingWentWrong;
       }
     },
+
     logout(router) {
+
+      // Clear store data
       this.user = null;
       this.id = null;
       this.isAuthenticated = false;
@@ -67,20 +86,24 @@ export const useAuthStore = defineStore('auth', {
 
       this.clearInactivityTimer();
 
-
       const toastStore = useToastStore();
       const langStore = useLanguageStore();
+
       toastStore.addToast({
         message: dictionary[langStore.language].logoutSuccess,
         type: 'info',
         visible: true,
       });
 
+      // Redirect to home page and reload
       router.push({ name: 'home' }).then(() => {
         window.location.reload();
       });
     },
+
+    // Load stored session data from localStorage
     loadStoredSession() {
+
       const storedName = localStorage.getItem('name');
       const storedId = localStorage.getItem('id');
       const storedRole = localStorage.getItem('role');
@@ -94,10 +117,12 @@ export const useAuthStore = defineStore('auth', {
     },
 
     startInactivityTimer(router) {
+
       if (this.inactivityTimeout) {
         clearTimeout(this.inactivityTimeout);
       }
-  
+      
+      // Log out user after 10 minutes of inactivity
       this.inactivityTimeout = setTimeout(() => {
         this.logout(router);
         
@@ -111,10 +136,12 @@ export const useAuthStore = defineStore('auth', {
       }, 600000); // 10 minutes
     },
   
+    // Reset the inactivity timer on user activity
     resetInactivityTimer(router) {
       this.startInactivityTimer(router);
     },
-  
+    
+    // Clear the inactivity timer 
     clearInactivityTimer() {
       if (this.inactivityTimeout) {
         clearTimeout(this.inactivityTimeout);

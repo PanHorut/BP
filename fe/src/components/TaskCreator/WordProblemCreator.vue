@@ -1,7 +1,15 @@
+<!--
+================================================================================
+ Component: WordProblemCreator.vue
+ Description:
+        Allows admin to create new example with steps and answer in form of word problem.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+-->
+
 <script setup>
 import { ref } from 'vue';
 
-// Define the component props
 const props = defineProps({
   number: {
     type: Number,
@@ -9,13 +17,20 @@ const props = defineProps({
   
 });
 
-const exampleInput = ref('');
-const exampleId = ref('');  
-const answerInput = ref(''); // Primary answer input (first one, not part of steps)
-const stepInputs = ref([]); // Start with an empty array for steps
+// Input fields
+const exampleInput = ref(''); 
+const answerInput = ref(''); 
+const stepInputs = ref([]);
+
+const exampleId = ref(''); 
 const focused = ref(false);
 
-// Function to get data from inputs
+// Add new step input
+const addStepInput = () => {
+  stepInputs.value.push({ value: '' });
+};
+
+// Get values from input fields
 const getData = () => {
   if (exampleInput.value !== "" && answerInput.value !== "") {
 
@@ -31,12 +46,13 @@ const getData = () => {
   }
 };
 
+// Import example into input fields
 const importExample = (example, id, answer, steps) => {
   exampleInput.value = example;
   exampleId.value = id;
   answerInput.value = answer;
 
-  // depends if import is from Tasks overview or from JSON
+  // Depends if import is from Tasks list or from JSON
   stepInputs.value = steps.map(step => {
 
     // from JSON
@@ -50,21 +66,14 @@ const importExample = (example, id, answer, steps) => {
   });  
 }
 
+// Clear input fields
 const clearInput = () => {
   exampleInput.value = '';
   answerInput.value = '';
   stepInputs.value = [];
 }
 
-
-// Expose the getData method to parent components
 defineExpose({ getData, importExample, clearInput });
-
-// Add new step input when "+" button is clicked
-const addStepInput = () => {
-  stepInputs.value.push({ value: '' });
-};
-
 </script>
 
 <template>
@@ -75,23 +84,27 @@ const addStepInput = () => {
       @focusout="focused = false"
       tabindex="0"
     >
-      <!-- Number Display -->
+      <!-- Example number -->
       <div class="flex justify-center items-center text-white bg-secondary rounded-full w-10 h-10 text-lg">
         {{ number }}
       </div>
   
-      <!-- Example Input and Answer Input -->
+      <!-- Example inputs -->
       <div class="flex justify-center p-3">
         <div class="flex flex-col w-full">
           <h2 class="text-secondary font-bold mb-1">Zadání slovní úlohy:</h2>
+
+          <!-- Example text input field -->
           <textarea
             v-model="exampleInput"
             placeholder="Zde vložte zadání slovní úlohy"
             class="h-32 p-3 border border-gray-300 rounded w-full"
           ></textarea>
           
-          <!-- Primary Answer Input -->
+          
           <h2 class="text-secondary font-bold mt-3 mb-1">Správná odpověď:</h2>
+
+          <!-- Answer input field -->
           <input
             type="text"
             v-model="answerInput"
@@ -99,7 +112,7 @@ const addStepInput = () => {
             class="h-14 p-3 border border-gray-300 rounded w-full"
           />
   
-          <!-- Dynamically Rendered Step Inputs -->
+          <!-- Steps input fields -->
           <div v-if="stepInputs.length > 0" class="mt-3">
             <h2 class="text-secondary font-bold mb-1">Kroky řešení:</h2>
             <div v-for="(step, index) in stepInputs" :key="index" class="flex items-center mb-2">
@@ -110,10 +123,11 @@ const addStepInput = () => {
               ></textarea>
             </div>
           </div>
+
         </div>
       </div>
   
-      <!-- Add Step Button -->
+      <!-- Add step -->
       <div class="flex flex-col justify-center items-center mt-3">
         <div
           @click="addStepInput"
@@ -123,7 +137,6 @@ const addStepInput = () => {
         </div>
         <p class="text-sm text-secondary font-medium mt-1">Přidat krok řešení</p>
       </div>
+
     </div>
   </template>
-  
-

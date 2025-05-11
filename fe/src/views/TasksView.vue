@@ -1,6 +1,15 @@
+<!--
+================================================================================
+ Component: TasksView.vue
+ Description:
+      Displays tasks with associated skills and examples.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+-->
+
 <script setup>
 import { ref, onMounted, watch, nextTick } from 'vue';
-import { getTasks, deleteExample, deleteTask } from '@/api/apiClient';
+import { getTasks, deleteTask } from '@/api/apiClient';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { useRouter } from 'vue-router';
@@ -11,12 +20,13 @@ const loading = ref(true);
 const router = useRouter();
 const toastStore = useToastStore();
 
+// Modal window variables
 const showDeleteModal = ref(false);
 const taskToDelete = ref(null);
 const taskToDeleteIndex = ref(null);
 const taskToDeleteName = ref('');
 
-// Function to render MathJax content
+// Render MathJax content
 const renderMathJax = () => {
   if (window.MathJax && window.MathJax.typesetPromise) {
     window.MathJax.typesetPromise().catch((err) =>
@@ -27,7 +37,7 @@ const renderMathJax = () => {
   }
 };
 
-// Fetch tasks and render MathJax when tasks update
+// Fetch tasks and render their examples
 onMounted(async () => {
   try {
     tasks.value = await getTasks();
@@ -39,7 +49,6 @@ onMounted(async () => {
   nextTick(() => renderMathJax());
 });
 
-// Watch for changes in tasks and re-render MathJax
 watch(tasks, () => {
   nextTick(() => renderMathJax());
 });
@@ -52,7 +61,7 @@ const confirmDeleteTask = (taskId, taskIndex, taskName) => {
   showDeleteModal.value = true;
 };
 
-// Cancel delete action
+// Cancel delete
 const cancelDelete = () => {
   taskToDelete.value = null;
   taskToDeleteIndex.value = null;
@@ -60,12 +69,13 @@ const cancelDelete = () => {
   showDeleteModal.value = false;
 };
 
-// Method to handle the deletion of a task
+// Delete task when confirmed
 const handleDeleteTask = async () => {
   if (!taskToDelete.value || taskToDeleteIndex.value === null) return;
 
   try {
     await deleteTask(taskToDelete.value);
+
     toastStore.addToast({
       message: `Sada "${taskToDeleteName.value}" byla smazána`,
       type: 'success',
@@ -73,51 +83,64 @@ const handleDeleteTask = async () => {
     });
 
     tasks.value.splice(taskToDeleteIndex.value, 1);
-    console.log(`Task "${taskToDeleteName.value}" deleted successfully`);
+
   } catch (error) {
     console.error("Error deleting task:", error);
+
   } finally {
     cancelDelete();
   }
 };
 
+// Navigate and pass task data to sandbox to edit selected task
 const handleEditTask = (taskIndex) => {
   const taskStore = useTaskStore();
   const task = tasks.value[taskIndex];
   const skills = task.skills;
   taskStore.setTask(task, skills);
-
   router.push('/sandbox');
 };
 </script>
 
 <template>
+
   <div class="max-w-4xl mx-auto p-4 pt-12">
     <div class="flex flex-col items-center justify-center">
       <h1 class="text-4xl text-primary font-bold text-center">Sady příkladů</h1>
+
+      <!-- Button to enter sandbox to create new task -->
       <RouterLink to="/sandbox"
         class="bg-green-500 hover:bg-green-700 p-4 cursor-pointer text-xl font-bold text-white rounded-lg my-4 transition">
         Vytvořit novou sadu
       </RouterLink>
-      <Spinner v-if="loading" />
-    </div>
 
+      <Spinner v-if="loading" />
+
+    </div>
+    <!-- Task list -->  
     <div v-for="(task, taskIndex) in tasks" :key="task.task_id"
       class="border border-gray-300 rounded-lg shadow-sm p-4 mb-6 bg-white">
-      <!-- Task Name -->
+
+      
       <div class="flex justify-between items-start">
+
         <div class="flex flex-col">
+
+          <!-- Task name -->
           <h2 class="text-lg font-semibold mb-2">
             {{ task.task_name }}
           </h2>
 
-          <!-- Render skills only for the first example -->
+          <!-- Task skills -->
           <span v-if="task.examples.length > 0">
             <span v-for="skill in task.skills" :key="skill.id" class="mr-2 text-sm text-gray-600">
               {{ skill.name }}
             </span>
           </span>
+
         </div>
+
+        <!-- Task actions -->
         <div class="flex">
           <button @click="handleEditTask(taskIndex)"
             class="bg-amber-500 hover:bg-amber-600 text-white text-sm py-1 px-3 rounded font-bold mr-4 transition"
@@ -130,16 +153,20 @@ const handleEditTask = (taskIndex) => {
             Smazat
           </button>
         </div>
+
       </div>
 
+      <!-- Tasks example list -->
       <details class="group">
+
         <summary class="cursor-pointer font-medium text-blue-600 hover:underline">
           Zobrazit příklady
         </summary>
+
         <div class="mt-4">
-          <!-- Examples -->
           <div v-for="example in task.examples" :key="example.example_id"
             class="flex justify-between items-center mb-4 border-b pb-2">
+
             <p class="text-gray-700">
               <span>Příklad:</span> <span v-html="example.example" class="font-semibold text-black"></span>
             </p>
@@ -148,13 +175,15 @@ const handleEditTask = (taskIndex) => {
               <span>Výsledek: </span>
               <span v-html="example.answers.map(a => a.answer_text).join(', ')" class="font-semibold text-black"></span>
             </p>
+
           </div>
         </div>
+
       </details>
     </div>
   </div>
 
-  <!-- Delete Confirmation Modal -->
+  <!-- Delete task confirmation modal -->
   <div v-if="showDeleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg w-1/2">
       <h2 class="text-2xl  mb-4">Opravdu chcete smazat sadu <span class="font-semibold">{{ taskToDeleteName }}</span>?</h2>
@@ -171,4 +200,5 @@ const handleEditTask = (taskIndex) => {
       </div>
     </div>
   </div>
+  
 </template>

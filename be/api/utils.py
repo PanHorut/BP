@@ -1,9 +1,20 @@
+"""
+================================================================================
+ Module: utils.py
+ Description: 
+        Implements utility functions mostly for working with skill tree
+ Author: Dominik Horut (xhorut01)
+================================================================================
+"""
+
 from .models import Skill, ExampleSkill
 from collections import defaultdict
 from datetime import datetime, timezone
 from asgiref.sync import sync_to_async
 
+# Get the height of a skill in the skill tree
 def get_height(id):
+    
     skill = Skill.objects.get(id=id)
     
     distance = 0
@@ -12,19 +23,15 @@ def get_height(id):
         distance += 1
     return distance
 
+# Return the count of examples that have all the skills provided in skill_ids
 def examples_with_skills(skill_ids):
-    """
-    Return the count of examples that have all the skills provided in skill_ids.
-    Optimized to reduce database queries.
-    """
+    
     try:
         if not skill_ids:
             return 0
             
-        # Convert to set for faster lookups
         skill_ids_set = set(skill_ids)
         
-        # Get all example IDs and their associated skills in one query
         example_skills = ExampleSkill.objects.filter(skill__in=skill_ids).values('example', 'skill')
         
         # Group skills by example
@@ -46,7 +53,7 @@ def examples_with_skills(skill_ids):
     except Skill.DoesNotExist:
         return 0
 
-# build skill tree for a given skill 
+# Build a tree of skills starting from the given skill
 def build_skill_tree(skill, visited=None, skill_ids=None, related_skills=None, withCounts=None):
     if visited is None:
         visited = set()
@@ -54,7 +61,7 @@ def build_skill_tree(skill, visited=None, skill_ids=None, related_skills=None, w
     if related_skills is None:
         related_skills = set()
     
-    # to avoid infinite loops
+    # Avoid infinite loops
     if skill.id in visited:
         return None  
     
@@ -68,14 +75,18 @@ def build_skill_tree(skill, visited=None, skill_ids=None, related_skills=None, w
         skill_ids.append(skill.id)
 
     examples_count = 0
+
+    print("With count", withCounts)
+    print("Skill ids", skill_ids)
     if related_skills and skill in related_skills:
         examples_count = examples_with_skills(skill_ids)
-
+    
+    # Edge case for Equations which are not related to Operations
     if withCounts:
         examples_count = examples_with_skills(skill_ids)
     
     
-    # nechci obecne skilly jako Operace nebo Číselné obory
+    # Skip general skills like Operations or Number Domains
     if skill.height >= 3:
         return {
         "id": skill.id,
@@ -87,9 +98,9 @@ def build_skill_tree(skill, visited=None, skill_ids=None, related_skills=None, w
         ]
         }
 
-
-# get skill paths from skill list 
+# Create skill paths for given skill ids based on skill tree
 def get_skill_paths(skill_ids, merge=True):
+
     skills = Skill.objects.filter(id__in=skill_ids).select_related('parent_skill')
     
     skill_dict = {skill.id: skill for skill in skills}
@@ -102,6 +113,7 @@ def get_skill_paths(skill_ids, merge=True):
     paths = []
     visited = set()
     
+    # Build paths from a given skill
     def build_paths(skill_id, current_path):
         if skill_id in visited:
             return
@@ -115,20 +127,25 @@ def get_skill_paths(skill_ids, merge=True):
                 build_paths(child, new_path)
         else:
             paths.append(new_path)
-    
+
+    # Identify root skills (no parent or parent not in selected skills)
     root_skills = [skill.id for skill in skills if not skill.parent_skill_id or skill.parent_skill_id not in skill_dict]
 
+    # Build paths starting from each root
     for root in root_skills:
         build_paths(root, [])
 
+    # Merge overlapping paths into unique paths
     if merge:       
         return merge_unique_lists(paths)
     else:
         return paths
 
-# merge created skill paths with unrelated skills 
+# Merge created skill paths unless they contain sibling skills (same parent)
 def merge_unique_lists(input_lists):
     result = []
+
+    # Check if two skills share the same parent
     def are_siblings(skill1, skill2):
         return skill1.parent_skill == skill2.parent_skill
     
@@ -142,13 +159,13 @@ def merge_unique_lists(input_lists):
             list_i_skills = [Skill.objects.get(id=skill_id) for skill_id in input_lists[i]]
             list_j_skills = [Skill.objects.get(id=skill_id) for skill_id in input_lists[j]]
             
-            # check if there's any sibling relationship between the two lists and avoid merging them    
+            # If no sibling skills between the two lists, merge them    
             if not any(are_siblings(skill1, skill2) for skill1 in list_i_skills for skill2 in list_j_skills):
                 result.append(input_lists[i] + input_lists[j])
 
     return result
 
-
+# Calculate the duration in milliseconds from the record date to now
 def calculate_duration(record_date_str):
    
     if not record_date_str:
@@ -156,16 +173,16 @@ def calculate_duration(record_date_str):
 
     try:
         record_date = datetime.strptime(record_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-
         record_date = record_date.replace(tzinfo=timezone.utc)
-
         current_time = datetime.now(timezone.utc)
 
         return int((current_time - record_date).total_seconds() * 1000)
+    
     except ValueError as e:
         print(f"Error parsing record_date: {e}")
         return 0  
 
+# Extract only skill names from the skills data
 def get_skill_names_string_sync(skill_ids):
     
     if not skill_ids:
@@ -177,6 +194,6 @@ def get_skill_names_string_sync(skill_ids):
     
     return ", ".join(skill_names)
 
-
+# Async version used in websocket communication
 get_skill_names_string = sync_to_async(get_skill_names_string_sync)
 

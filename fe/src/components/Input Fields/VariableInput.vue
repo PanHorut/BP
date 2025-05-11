@@ -1,3 +1,12 @@
+<!--
+================================================================================
+ Component: VariableInput.vue
+ Description:
+        Input field for variable answers.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+-->
+
 <script setup>
 import { defineProps, ref, watch, defineEmits, computed } from 'vue';
 import { useRecorderStore } from '@/stores/useRecorderStore';
@@ -13,18 +22,19 @@ const recorderStore = useRecorderStore();
 
 const emits = defineEmits(['answerSent']); 
 
+// Return input fields value to parent component - Example
 function getAnswer() {
     emits('answerSent', variables.value);
 }
 
+// Clear input fields
 const clearInput = () => {
     variables.value.forEach(variable => {
         variable.answer = ''; 
     });
 }
 
-defineExpose({getAnswer, clearInput});
-
+// Extract variable names from answer using ';' and '=' as delimiter
 function getVariables() {
     variables.value = [];
 
@@ -36,21 +46,15 @@ function getVariables() {
         if (key && value !== undefined) {
             variables.value.push({ key: key.trim(), correctAnswer: value.trim(), answer: '' });
         }
-    });
-
-    
+    });   
 }
 
+defineExpose({getAnswer, clearInput});
+
+// Get variables when the component is mounted
 watch(() => props.answer, getVariables, { immediate: true });
 
-function updateAnswers() {
-    const answers = variables.value.reduce((acc, variable) => {
-        acc[variable.key] = variable.answer;
-        return acc;
-    }, {});
-    //emits('updateAnswers', answers);
-}
-
+// Display users answer by voice if any
 watch(
     () => [recorderStore.isRecording, recorderStore.student_answer],
     ([isRecording, studentAnswer]) => {
@@ -70,22 +74,27 @@ watch(
         }
     }
 );
-
 </script>
 
 <template>
     <div class="flex flex-col items-end">
+
         <div v-for="(variable, index) in variables" :key="index" class="flex">
+
+            <!-- Name of variable -->
             <p class="flex items-center">{{ computed(() => `\\(${variable.key}\\)`)}} = </p>
+
+            <!-- Input field for variable -->
             <input
                 type="text"
                 v-model="variable.answer"
-                @input="updateAnswers" 
                 class="text-start w-64 text-6xl md:text-8xl border-none self-end p-0"
                 placeholder="?"
                 inputmode="numeric"
                 autofocus
             />
+
         </div>
+        
     </div>
 </template>

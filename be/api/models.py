@@ -1,21 +1,30 @@
+"""
+================================================================================
+ Module: models.py
+ Description: 
+        Defines the data models used in the application. 
+ Author: Dominik Horut (xhorut01)
+================================================================================
+"""
+
 from django.db import models
-from datetime import timedelta
 from django.contrib.auth.hashers import make_password, check_password
 
 
 class Task(models.Model):
-
     FORM_CHOICES = [
         ('classic', 'Classic'),
         ('word-problem', 'Word Problem'),
     ]
 
     name = models.CharField(max_length=255)
+
     skills = models.ManyToManyField(
         'Skill',  
         blank=True,  
         related_name='tasks' 
     )
+
     form = models.CharField(
         max_length=20, 
         choices=FORM_CHOICES, 
@@ -30,6 +39,7 @@ class Example(models.Model):
 class Step(models.Model):
     example = models.ForeignKey(Example, on_delete=models.CASCADE, related_name='steps')
     text = models.TextField()
+
     order = models.PositiveIntegerField(
         default=0,
     )
@@ -42,6 +52,7 @@ class Skill(models.Model):
     name = models.CharField(max_length=255)
     height = models.IntegerField(default=0) 
     deleted = models.BooleanField(default=False)
+    
     parent_skill = models.ForeignKey(
         'self',                  
         null=True,               
@@ -102,5 +113,3 @@ class Admin(models.Model):
     def check_password(self, password):
         return check_password(password, self.password)
 
-    def __str__(self):
-        return self.username

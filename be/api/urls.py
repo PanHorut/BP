@@ -1,14 +1,24 @@
+"""
+================================================================================
+ Module: urls.py
+ Description: 
+        Defines URL routing for HTTP views and WebSocket consumers in the app.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+"""
+
 from django.urls import path
 from . import views 
 from .consumers import SpeechRecognitionConsumer
 from .consumersSurvey import SurveySpeechTranscriptionConsumer
+
 urlpatterns = [
 
     path('tasks/', views.get_tasks, name='get-tasks'),
     path('create-task/', views.create_task, name='create-task'),
     path('edit-task/', views.edit_task, name='edit-task'),
     path('tasks/<int:task_id>/delete/', views.delete_task, name='delete_task'),
-
+    
     path('examples/', views.get_examples, name='get-examples'),
     path('example/<int:example_id>/delete/', views.delete_example, name='delete_example'),
 

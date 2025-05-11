@@ -1,25 +1,33 @@
+"""
+================================================================================
+ Module: views.py
+ Description:
+        Contains API views that serve the frontend with data manipulation functionality.
+        It includes CRUD operations for tasks, examples, skills, and student records.
+        It also handles user authentication and answer checking.
+
+ Author: Dominik Horut (xhorut01)
+================================================================================
+"""
+
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.hashers import make_password, check_password
+from django.http import JsonResponse
 from django.db import transaction
 from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, Admin, Step
-from .serializers import ExampleSerializer, ExampleSkillSerializer, SkillSerializer, TaskSerializer, RecordInitSerializer
-from django.http import JsonResponse
-from django.db.models import Prefetch
-from .utils import get_height, build_skill_tree, get_skill_paths
-from django.contrib.auth.hashers import make_password, check_password
+from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer
+from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
-
-
 import json
 import random
+from datetime import datetime
+import os
 
-class ExampleList(generics.ListCreateAPIView):
-    queryset = Example.objects.all()
-    serializer_class = ExampleSerializer
-
+# Add all skill_ids to the related_skills field of each skill
 def create_skill_relations(skill_ids):
 
     skills = Skill.objects.filter(id__in=skill_ids)
@@ -28,6 +36,7 @@ def create_skill_relations(skill_ids):
         related_skills = [s for s in skills if s != skill and s.skill_type != skill.skill_type]
         skill.related_skills.add(*related_skills)  
 
+# Creates a new task and its examples
 @api_view(['POST'])
 def create_task(request):
     task_name = request.data.get('task_name')
@@ -41,7 +50,7 @@ def create_task(request):
     skills = Skill.objects.filter(id__in=skill_ids)
 
     if not skills.exists():
-        return Response({"error": "At least one valid skill ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Nebyly zadány žádné dovednosti"}, status=status.HTTP_400_BAD_REQUEST)
 
     task_instance, created = Task.objects.get_or_create(name=task_name)
 
@@ -52,10 +61,9 @@ def create_task(request):
     # Assign skills to the task
     task_instance.skills.add(*skills)
 
-    # List to store created examples data
     created_examples = []
 
-    # Loop through each example in the request data
+    # Loop through each example data and create it
     for example_data in examples_data:
         example_text = example_data.get('example')
         input_type = example_data.get('input_type')
@@ -64,78 +72,74 @@ def create_task(request):
 
         # Validate required fields
         if not example_text or not input_type:
-            continue  # Skip this example if required fields are missing
+            continue 
 
-        # Prepare example data for serializer
+        
         example_payload = {
             'example': example_text,
             'input_type': input_type,
-            'task': task_instance.id  # Link to the task instance
+            'task': task_instance.id  
         }
         example_serializer = ExampleSerializer(data=example_payload)
         
         if example_serializer.is_valid():
-            with transaction.atomic():  # Ensures atomic database operations
+            with transaction.atomic():  
                 example_instance = example_serializer.save()
 
-                # If an answer is provided, create the Answer instance
+                # Create answer of example
                 if answer_text:
                     Answer.objects.create(example=example_instance, answer=answer_text)
 
-                # Create ExampleSkill instances for each skill ID provided
+                # Assign skills to the example
                 for skill in skills:
                     ExampleSkill.objects.create(example=example_instance, skill=skill)
                 
                 create_skill_relations(skill_ids)
 
-                # Create Step instances
+                # Create example steps if any
                 for index, step_text in enumerate(steps, start=1):
-                    if step_text:  # Check if step is not an empty string
+                    if step_text:  
                         Step.objects.create(
                             example=example_instance,
                             text=step_text,
                             order=index  
                         )
 
-                # Add the created example data to the list
+                
                 created_examples.append(example_serializer.data)
     
-    # Return all created examples
     return Response({"created_examples": created_examples}, status=status.HTTP_201_CREATED)
 
+# Edits an existing task and its examples
 @api_view(['POST'])
 def edit_task(request):
     task_id = request.data.get('task_id')
     task_name = request.data.get('task_name')
     task_form = request.data.get('task_form')   
     skill_ids = request.data.get('skill_ids', [])
-    examples_data = request.data.get('examples', [])  # Array of examples
+    examples_data = request.data.get('examples', [])
 
-    # Ensure the task ID is provided
     if not task_id:
         return Response({"error": "Nebyl zadán ID sady"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Fetch the existing task by ID
     try:
         task_instance = Task.objects.get(id=task_id)
     except Task.DoesNotExist:
         return Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    # Update task name if provided
+    # Update task attributes
     if task_name:
         task_instance.name = task_name
         task_instance.form = task_form
         task_instance.save()
 
-    # Fetch skills
     skills = Skill.objects.filter(id__in=skill_ids)
     if not skills.exists():
         return Response({"error": "At least one valid skill ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Update task's skills
-    task_instance.skills.set(skills)  # Replace old skills with new ones
+    # Update tasks skills
+    task_instance.skills.set(skills)
 
-    # List to store updated examples data
     updated_examples = []
 
     # Loop through each example in the request data
@@ -146,10 +150,9 @@ def edit_task(request):
         answer_text = example_data.get('answer')
         steps = example_data.get('steps', [])
 
-        # Validate required fields
         if not example_text or not input_type:
-            continue  # Skip this example if required fields are missing
-        
+            continue  
+
         # If example_id is provided, try to update the existing example
         if example_id:
             try:
@@ -176,39 +179,36 @@ def edit_task(request):
                 defaults={'answer': answer_text}
             )
 
+        # Update related skills to the example
         existing_relations = ExampleSkill.objects.filter(example=example_instance)
-
         new_skill_ids = set(skill.id for skill in skills)
-
         existing_relations.exclude(skill_id__in=new_skill_ids).delete()
 
         for skill in skills:
             ExampleSkill.objects.update_or_create(example=example_instance, skill=skill)
         
-        # Create or update skill relations
         create_skill_relations(skill_ids)
 
         # Update or create Step instances
-        Step.objects.filter(example=example_instance).delete()  # Clear old steps first
+        Step.objects.filter(example=example_instance).delete() 
         for index, step_text in enumerate(steps, start=1):
-            if step_text:  # Only create steps that are not empty
+            if step_text:
                 Step.objects.create(
                     example=example_instance,
                     order=index,
                     text=step_text
                 )
 
-        # Add the updated example data to the list
         example_serializer = ExampleSerializer(example_instance)
         updated_examples.append(example_serializer.data)
 
-    # Return all updated examples
+    
     return Response({"updated_examples": updated_examples}, status=status.HTTP_200_OK)
 
+# Get skill data by provided skill id
 @api_view(['GET'])
 def get_skill(request, skill_id):
     try:
-    
         skill = Skill.objects.get(id=skill_id)
 
         if skill.deleted == True:
@@ -217,26 +217,28 @@ def get_skill(request, skill_id):
         skill_data = SkillSerializer(skill).data
     
         return Response(skill_data, status=status.HTTP_200_OK)
+
     except Skill.DoesNotExist:
         return Response({"error": "Skill not found"}, status=status.HTTP_404_NOT_FOUND)
 
-
-
+# Get all examples for the provided skill ids
 @api_view(['GET'])
 def get_examples(request):
-    topics = request.query_params.get('topics')
+
+    skills = request.query_params.get('topics')
     
-    if not topics:
+    if not skills:
         return Response({"error": "No topics provided"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        topics_data = json.loads(topics)
+        skills_data = json.loads(skills)
 
     except json.JSONDecodeError:
         return Response({"error": "Invalid JSON format for topics"}, status=status.HTTP_400_BAD_REQUEST)
 
-    skill_paths = get_skill_paths(topics_data)
-    print(skill_paths)
+    # Get skill paths to get examples containing them
+    skill_paths = get_skill_paths(skills_data)
+
     example_data = []
 
     for path in skill_paths:
@@ -246,11 +248,12 @@ def get_examples(request):
         ).distinct()
 
         for example in examples:
-            # Get all skill IDs associated with this example through ExampleSkill
+
             example_skill_ids = set(example.exampleskill_set.values_list('skill__id', flat=True))
 
-            # Check if the example skill IDs contain all the skills in the current path (no missing skills)
+            # Check if the example skill ids contain all the skills in the current path (no missing skills)
             if example_skill_ids.issuperset(set(path)):
+
                 example_data.append({
                     "id": example.id,
                     "example": example.example,
@@ -277,9 +280,7 @@ def get_examples(request):
 
     return Response(example_data, status=status.HTTP_200_OK)
 
-
-
-# vytvori zaznam, ze zak dany priklad pocital, datum se nastavi automaticky
+# Create a new record that user practiced the example
 @api_view(['POST'])
 def create_example_record(request):
     student = request.data.get('student_id')
@@ -301,23 +302,23 @@ def create_example_record(request):
         record = record_init_serializer.save()
 
         response_data = record_init_serializer.data
-        response_data['date'] = record.date  # Include the 'date' from the saved record
+        response_data['date'] = record.date
 
         return Response(response_data, status=status.HTTP_201_CREATED)
 
     return Response(record_init_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# pokud dite u prikladu odpovi, na zaklade spravnosti se urci co dal (dalsi pokus x spravna odpoved x dalsi priklad)
+# Updates record that user practiced the example
 @api_view(['POST'])
 def update_example_record(request):
-
-    is_correct = request.data.get('isCorrect')
+    # Data to identify the record
     student = request.data.get('student_id')
     example = request.data.get('example_id')
     date = request.data.get('date')
+
+    # Duration how long it took user to enter the answer
     duration = request.data.get('time')
   
-
     if not student or not example or not duration:
         return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -325,21 +326,24 @@ def update_example_record(request):
     
     try:
         with transaction.atomic():
+            # Update record data
             student_example.attempts += 1
-
             student_example.duration = duration
 
+            # Determine if limit of tries is reached and new example should be shown to user
             next_example = student_example.attempts == 3
-            
-                                    
+                         
             student_example.save()
         
         return Response({"message": "Record updated successfully", "next_example": next_example}, status=status.HTTP_200_OK)
+
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
+# Deletes record that user practiced the example        
 @api_view(['POST'])
 def delete_example_record(request):
+    # Data to identify the record
     student = request.data.get('student_id')
     example = request.data.get('example_id')
     date = request.data.get('date')
@@ -358,8 +362,10 @@ def delete_example_record(request):
     except StudentExample.DoesNotExist:
         return Response({"error": "Record not found"}, status=status.HTTP_404_NOT_FOUND)
 
+# Updates example record to skipped
 @api_view(['POST'])
 def skip_example(request):
+    # Data to identify the record
     student = request.data.get('student_id')
     example = request.data.get('example_id')
     date = request.data.get('date')
@@ -371,6 +377,8 @@ def skip_example(request):
 
     try:
         with transaction.atomic():
+
+            # Record is marked as skipped and attempts and duration are not relevant
             student_example.skipped = True
             student_example.attempts = 0
             student_example.duration = 0
@@ -381,19 +389,18 @@ def skip_example(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+# Get all tasks and their examples
 @api_view(['GET'])
 def get_tasks(request):
-    # Prefetch related data
     tasks = Task.objects.prefetch_related(
-        'example_set__answers',          # Fetch related answers
-        'example_set__exampleskill_set__skill', # Prefetch related ExampleSkills and their Skills
-        'example_set__steps'            # Prefetch related Steps
+        'example_set__answers',         
+        'example_set__exampleskill_set__skill', 
+        'example_set__steps'           
     )
     
-    # Prepare the response data
     data = []
     for task in tasks:
-        # Get skills for the task (same for all examples)
+        # Get skills for the task
         skills = []
         # Use the first example to get skills, since all examples share the same skills
         first_example = task.example_set.first()
@@ -410,12 +417,12 @@ def get_tasks(request):
                 for example_skill in first_example.exampleskill_set.all()
             ]
         
-        # Build task data
+        # Get task data
         task_data = {
             "task_id": task.id,
             "task_name": task.name,
             "task_form": task.form,
-            "skills": skills,  # Add skills at task level
+            "skills": skills,  
             "examples": [
                 {
                     "example_id": example.id,
@@ -442,40 +449,35 @@ def get_tasks(request):
         }
         data.append(task_data)
     
-    # Return the data as JSON
     return JsonResponse(data, safe=False)
 
+# Delete an example and its related data (answers, steps)
 @api_view(['DELETE'])
 def delete_example(request, example_id):
-    # Get the example object, or return 404 if not found
     example = get_object_or_404(Example, id=example_id)
     
     try:
-        # Start a database transaction to ensure consistency
         with transaction.atomic():
-            # Delete the example
             example.delete()
         
-        # Return a successful response with no content
         return Response(status=status.HTTP_204_NO_CONTENT)
+
     except Exception as e:
-        # In case of an error, return an internal server error response
         return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+# Delete a task and its related data
 @api_view(['DELETE'])
 def delete_task(request, task_id):
     try:
         with transaction.atomic():
-            # Fetch the task by ID
             task = get_object_or_404(Task, id=task_id)
             
-            # Get all skills related to this task before deleting it
             related_skills = list(task.skills.all())  
 
-            # Remove connections from the skill-task relationship table
+            # Remove connections from the skill-task relationship
             task.skills.clear()
 
-            # Delete the task (this will also delete related Examples and Answers)
+            # Delete the task and its related data (examples, answers, steps)
             task.delete()
 
             # Check skill relationships and remove them if no other task uses them
@@ -487,7 +489,7 @@ def delete_task(request, task_id):
                     # If this was the last task using this relationship, remove the relation
                     if not shared_tasks.exists():
                         skill.related_skills.remove(related_skill)
-                        related_skill.related_skills.remove(skill)  # Ensure bidirectional removal
+                        related_skill.related_skills.remove(skill)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -497,46 +499,46 @@ def delete_task(request, task_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-
+# Create a new skill or restore a deleted one
 @api_view(['POST'])
 def create_skill(request):
     try:
-        # Extract data from the request
         name = request.data.get('name')
         parent_skill_id = request.data.get('parent_skill')
 
         if not name:
             return Response({"error": "Skill name is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate and fetch the parent skill if provided
         parent_skill = None
-        skill_type = None  # Default is None (NULL)
+        skill_type = None
 
+        # Prepare new skill data
         if parent_skill_id:
             parent_skill = get_object_or_404(Skill, id=parent_skill_id)
             skill_type = parent_skill.skill_type  
             height = get_height(parent_skill_id) + 1
+        
+        # No parent skill
         else:
-            height = 0  # Set a default height if there's no parent skill
-
+            height = 0  
         # Check if a skill with the same name already exists and is not deleted
         existing_skill = Skill.objects.filter(name=name, deleted=True).first()
         
         if existing_skill:
-            # If a deleted skill exists with the same name, restore it by setting deleted to False
+            # If a deleted skill exists with the same name, restore it
             existing_skill.deleted = False
             existing_skill.save()
 
-            # Return the restored skill data
             return JsonResponse({
                 "id": existing_skill.id,
                 "name": existing_skill.name,
                 "parent_skill": existing_skill.parent_skill.id if existing_skill.parent_skill else None,
-                "skill_type": existing_skill.skill_type,  # Include skill_type in response
+                "skill_type": existing_skill.skill_type,  
             }, status=status.HTTP_200_OK)
+
+        # If no deleted skill exists, create a new skill
         else:
-            # If no deleted skill exists, create a new skill
-            with transaction.atomic():  # Ensure transactional consistency
+            with transaction.atomic():  
                 skill = Skill.objects.create(
                     name=name, 
                     parent_skill=parent_skill, 
@@ -544,19 +546,17 @@ def create_skill(request):
                     height=height
                 )
 
-            # Return the created skill data
             return JsonResponse({
                 "id": skill.id,
                 "name": skill.name,
                 "parent_skill": skill.parent_skill.id if skill.parent_skill else None,
-                "skill_type": skill.skill_type,  # Include skill_type in response
+                "skill_type": skill.skill_type, 
             }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
-        # Handle any unexpected errors
         return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+# Get all skills in a tree structure
 @api_view(['GET'])
 def get_skill_tree(request):
     skills = Skill.objects.filter(deleted=False)
@@ -566,9 +566,13 @@ def get_skill_tree(request):
     skill_dict = {skill["id"]: {**skill, "children": []} for skill in skill_list}
 
     root_skills = []
+
+    # Build the tree structure
     for skill in skill_dict.values():
+
         if skill["parent_skill"] is None:
             root_skills.append(skill)
+
         else:
             parent = skill_dict.get(skill["parent_skill"])
             if parent:
@@ -576,6 +580,7 @@ def get_skill_tree(request):
 
     return Response(root_skills)
 
+# Search for skills based on a query and parent skill
 @api_view(['GET'])
 def search_skills(request):
     query = request.GET.get('q', '') 
@@ -586,15 +591,18 @@ def search_skills(request):
 
     try:
         parent_skill = Skill.objects.get(id=skill_id)
+
     except Skill.DoesNotExist:
         return Response([])
 
     if query:
+        # Searched skill name must be children of provided parent skill
         skills = Skill.objects.filter(
             name__icontains=query, 
             parent_skill=parent_skill,
             deleted=False  
         )
+    # No query provided, get all children of the parent skill   
     else:
         skills = Skill.objects.filter(parent_skill=parent_skill, deleted=False)
 
@@ -602,50 +610,57 @@ def search_skills(request):
 
     return Response(skill_list)
 
-
+# Get skills which should be displayed on landing page
 @api_view(['GET'])
 def get_landing_page_skills(request):
+
+    # Get non-deleted skills
     existing_skills = Skill.objects.filter(deleted=False)
 
+    # Filter skills that should not be displayed (height <= 3)
     skills_with_height = existing_skills.filter(height__lte=3)
 
+    # Get leaf skills
     leaf_skills = skills_with_height.filter(subskills__isnull=True)
 
+    # Get skills with height 3
     skills_with_height_3 = existing_skills.filter(height=3)
 
+    # Displayed skills should be leaf skills or have height == 3    
     skills = (leaf_skills | skills_with_height_3).distinct()
 
     serializer = SkillSerializer(skills, many=True)
 
     return Response(serializer.data)
 
+# Get all skills related to the selected skill  
 @api_view(['GET'])
 def get_related_skills_tree(request, skill_id):
     try:
-        main_skill = Skill.objects.get(id=skill_id, deleted=False)  # Get the selected skill
-        visited = set()  # Track visited nodes to avoid infinite recursion
+        main_skill = Skill.objects.get(id=skill_id, deleted=False)  
+        visited = set()
         tree = []
 
-        # Get all directly related skills
         related_skills = main_skill.related_skills.filter(deleted=False)    
 
-        # Build tree structure by ensuring parent-child hierarchy
+        # Build tree structure to be visualized in the frontend
         for skill in related_skills:
-            skill_ids = [main_skill.id, skill.id]  # Include main_skill and related skill IDs
+            skill_ids = [main_skill.id, skill.id] 
             if skill.id not in visited:
                 subtree = build_skill_tree(skill, visited, skill_ids, related_skills, None)
                 if subtree:
                     tree.append(subtree)
 
-        return Response(tree)  # Return JSON tree response
+        return Response(tree)
+
     except Skill.DoesNotExist:
         return Response({"error": "Skill not found"}, status=404)
 
-
-
-
+# Get all children skills of the selected skill
 @api_view(['GET'])
 def get_children_skills_tree(request, skill_id):
+
+    # Edge case for Equation skills
     withCounts = request.GET.get('with_counts', 'false') == 'true'
 
     try:
@@ -655,9 +670,11 @@ def get_children_skills_tree(request, skill_id):
             return Response({"error": "Skill not found"}, status=404)   
         visited = set()  
         tree = []
-
+        
+        # Get all children skills of the selected skill
         children = Skill.objects.filter(parent_skill=main_skill, deleted=False)
 
+        # Build subtree structure of each child to be visualized in the frontend
         for skill in children:
             if skill.id not in visited:
                 subtree = build_skill_tree(skill, visited, None, None, withCounts) 
@@ -665,9 +682,11 @@ def get_children_skills_tree(request, skill_id):
                     tree.append(subtree)
 
         return Response(tree)  
+
     except Skill.DoesNotExist:
         return Response({"error": "Skill not found"}, status=404)
 
+# Get all operation skills related to the selected skill    
 @api_view(['GET'])
 def get_operation_skills(request, skill_id):
     try:
@@ -676,8 +695,10 @@ def get_operation_skills(request, skill_id):
         if main_skill.deleted:
             return Response({"error": "Skill not found"}, status=404)
 
+        # Get all children skills of the selected skill
         children_skills = main_skill.subskills.filter(deleted=False)
 
+        # Get all operation skills related to the selected skill    
         related_operation_skills = main_skill.related_skills.filter(skill_type='OPERATION', deleted=False)
 
         skills_data = []
@@ -686,7 +707,7 @@ def get_operation_skills(request, skill_id):
             child_data = []
 
             for child_skill in children_skills:
-                # Count examples that have BOTH operation_skill and child_skill
+                # Count examples that have both operation_skill and child_skill
                 examples_count = ExampleSkill.objects.filter(
                     skill=operation_skill
                 ).filter(
@@ -698,11 +719,13 @@ def get_operation_skills(request, skill_id):
                     "related_name": child_skill.name,
                     "examples": examples_count
                 })
+
+            # Include only single operations not parent skill Operations
             if operation_skill.height >= 3:
                 skills_data.append({
                 "id": operation_skill.id,
                 "name": operation_skill.name,
-                "related_skills": child_data  # List of children with their common examples count
+                "related_skills": child_data
                 })
 
         return Response(skills_data)
@@ -710,6 +733,7 @@ def get_operation_skills(request, skill_id):
     except Skill.DoesNotExist:
         return Response({"error": "Skill not found"}, status=404)
 
+# Soft delete a skill and remove all its relations
 @api_view(['PATCH'])
 def delete_skill(request, skill_id):
     try:
@@ -719,14 +743,14 @@ def delete_skill(request, skill_id):
         skill.deleted = True
         skill.save()
         
-        # Delete all ExampleSkill relations with this skill
+        # Remove this skill from all related examples
         ExampleSkill.objects.filter(skill=skill).delete()
         
-        # Remove this skill from all Task's skills (many-to-many relationship)
+        # Remove this skill from realtions with tasks
         for task in Task.objects.filter(skills=skill):
             task.skills.remove(skill)
         
-        # Remove this skill from all related_skills (many-to-many relationship)
+        # Remove this skill from all related_skills
         for related_skill in skill.related_skills.all():
             skill.related_skills.remove(related_skill)
         
@@ -741,13 +765,14 @@ def delete_skill(request, skill_id):
             status=404
         )
 
+# Create new user account
 @api_view(['POST'])
 def register_student(request):
     username = request.data.get('username')
     passphrase = request.data.get('passphrase')
 
     if not username or not passphrase:
-        return Response({'error': 'Username and passphrase are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Chybí uživatelské jméno nebo heslo'}, status=status.HTTP_400_BAD_REQUEST)
     
     if Student.objects.filter(username=username).exists():
         return Response({'error': 'Tato přezdívka je již používána jiným uživatelem'}, status=status.HTTP_400_BAD_REQUEST)
@@ -759,60 +784,62 @@ def register_student(request):
 
     return Response({'message': 'Student registered successfully!','id': student.id}, status=status.HTTP_201_CREATED)
 
+# Login user account
 @api_view(['POST'])
 def login_student(request):
     username = request.data.get('username')
     passphrase = request.data.get('passphrase')
 
-    # Check if username and passphrase are provided
     if not username or not passphrase:
         return Response({'error': 'Nebyly zadány všechny potřebné údaje'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    # Check if user exists
     try:
         student = Student.objects.get(username=username)
     except Student.DoesNotExist:
         return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Check passphrase
     if check_password(passphrase, student.passphrase):
         return Response({'message': 'Login successful!','id': student.id, 'role': 'student'}, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_401_UNAUTHORIZED)
     
+# Login admin account   
 @api_view(['POST'])
 def login_admin(request):
     username = request.data.get('username')
     password = request.data.get('password')
 
-    # Check if username and passphrase are provided
     if not username or not password:
         return Response({'error': 'Nebyly zadány všechny potřebné údaje'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    # Check if user exists
     try:
         admin = Admin.objects.get(username=username)
     except Admin.DoesNotExist:
         return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Check passphrase
     if check_password(password, admin.password):
         return Response({'message': 'Přihlášení proběhlo úspěšně!', 'role': 'admin'}, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_401_UNAUTHORIZED)
 
+# Check if the keyboard entered answer is correct
 @api_view(['POST'])
 def check_answer(request):
+
     student_id = request.data.get('student_id')
     example_id = request.data.get('example_id')
+
+    # Data for record creation
     date = request.data.get('date')
     duration = request.data.get('duration')
+
     student_answer = request.data.get('student_answer')
     answer_type = request.data.get('answer_type')
 
     if not student_id or not example_id or not date or not duration or not answer_type:
         return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
     
+    # Choose the answer checker based on the answer type
     match answer_type:
         case "inline" | "word":
             isCorrect, continue_with_next = InlineAnswerChecker.verifyAnswer(student_id, example_id, date, duration, student_answer)
@@ -829,46 +856,10 @@ def check_answer(request):
         case _:
             return Response({'error': 'Invalid answer type'}, status=status.HTTP_400_BAD_REQUEST)
     
+    # Return if answer was corrrect and if new example should be shown
     return Response({'isCorrect': isCorrect, 'continue_with_next': continue_with_next}, status=status.HTTP_200_OK)    
 
-
-from django.db.models import Sum
-from django.db.models.functions import TruncMinute
-
-@api_view(['GET'])
-def attempts_over_time(request):
-    try:
-        # Get student_id from query params (adjust as needed)
-        student_id = request.query_params.get('student_id')
-        
-        if not student_id:
-            return Response({"error": "Missing student_id"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Aggregate attempts per minute (or change to hour/day)
-        data = (
-            StudentExample.objects
-            .filter(student_id=student_id)
-            .annotate(time_group=TruncMinute('date'))
-            .values('time_group')
-            .annotate(total_attempts=Sum('attempts'))
-            .order_by('time_group')
-        )
-
-        # Format data for ApexCharts
-        response_data = {
-            'categories': [item['time_group'].strftime('%H:%M') for item in data],
-            'series': [
-                {
-                    'name': 'Attempts',
-                    'data': [item['total_attempts'] for item in data]
-                }
-            ]
-        }
-
-        return Response(response_data, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+# Get all skill paths from skill ids to be displayed when editing task
 @api_view(['GET'])
 def get_paths_for_sandbox(request):
     skill_ids = request.GET.getlist('skill_ids', [])  
@@ -880,9 +871,11 @@ def get_paths_for_sandbox(request):
         skill_ids = [int(id) for id in skill_ids] 
         skill_paths = get_skill_paths(skill_ids, False)
         return Response(skill_paths, status=status.HTTP_200_OK)
+
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+# Get number of tasks and examples related to the selected skill
 @api_view(['GET'])
 def get_skill_related_counts(request):
     skill_id = request.GET.get('skill_id')
@@ -900,31 +893,30 @@ def get_skill_related_counts(request):
 
     return Response(data)
 
-
-from datetime import datetime
-import os
-from .utils import get_skill_names_string_sync
+# Directory to save survey answers  
 SURVEY_DIR = "survey"
 os.makedirs(SURVEY_DIR, exist_ok=True)
 
+# Save survey answer to a JSON file
 @api_view(['POST'])
 def save_survey_answer(request):
+
+    # Survey answer data
     question_type = request.data.get('question_type')
     question_text = request.data.get('question_text')
     answer = request.data.get('answer')
     skills = request.data.get('skills')
+
+    # Skills which were practiced when question was asked
     skill_names = get_skill_names_string_sync(skills)
 
     if not question_type or not question_text or not answer:
         return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
     
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-
     json_filename = f"{question_type}_{timestamp}.json"
-
     json_filepath = os.path.join(SURVEY_DIR, json_filename)
         
-
     survey_question_data = {
         "question_text": question_text,
         "answer": answer,
@@ -932,6 +924,7 @@ def save_survey_answer(request):
         "timestamp": timestamp
     }
 
+    # Save the survey answer to a JSON file
     with open(json_filepath, "w", encoding="utf-8") as json_file:
         json.dump(survey_question_data, json_file, indent=4, ensure_ascii=False)
     

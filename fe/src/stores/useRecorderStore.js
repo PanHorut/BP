@@ -1,23 +1,39 @@
+/**
+ * ================================================================================
+ * File: useRecorderStore.js
+ * Description:
+ *       Pinia store for managing the audio recording state and WebSocket communication
+ *       for user answers by voice.
+ * Author: Dominik Horut (xhorut01)
+ * ================================================================================
+ */
+
 import { defineStore } from "pinia";
 import { ref, onUnmounted } from "vue";
 import { useLanguageStore } from "./useLanguageStore";
 
 export const useRecorderStore = defineStore("recorder", () => {
-  const isRecording = ref(false);
+
   let ws = null;
+
+  // Control recording
+  const isRecording = ref(false);
+
+  // Metadata for the audio answer evaluation
   const student_id = ref(null);
   const example_id = ref(null);
   const input_type = ref(null); 
   const record_date = ref(null);
 
-  // Store result from WebSocket
+  // Result of evaluation data
   const isCorrect = ref(null);
   const continueWithNext = ref(null);
   const student_answer = ref(null);
 
+  // User allowed his voice to be recorded
   const allowedRecording = ref(false);
 
-  // Survey info
+  // Survey metadata
   const question_text = ref(null);
   const skillsList = ref(null);
 
@@ -27,7 +43,7 @@ export const useRecorderStore = defineStore("recorder", () => {
   let stream = null;
   let workletNode = null;
 
-  let emitFunction = null; // Store emit function reference
+  let emitFunction = null;
 
   const setEmitFunction = (emit) => {
     emitFunction = emit;
@@ -65,51 +81,64 @@ export const useRecorderStore = defineStore("recorder", () => {
             this.bufferIndex = 0;
           }
         }
-        
         return true;
       }
     }
-    
     registerProcessor('pcm-processor', PCMProcessor);
   `;
 
+  // Start the recording process and initiate WebSocket connection
   const startRecording = async (isSurvey) => {
     try {
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        let wsurl = isSurvey ? "wss://drillovacka.applikuapp.com/ws/survey/" : "wss://drillovacka.applikuapp.com/ws/speech/"; // POZOR NA DEPLOY
-        ws = new WebSocket(wsurl); //  "ws://localhost:8000/ws/survey/" : "ws://localhost:8000/ws/speech/"
+        let wsurl = isSurvey ? "ws://localhost:8000/ws/survey/" : "ws://localhost:8000/ws/speech/"; // POZOR NA DEPLOY
+        ws = new WebSocket(wsurl); //   "wss://drillovacka.applikuapp.com/ws/survey/" : "wss://drillovacka.applikuapp.com/ws/speech/"
         ws.onopen = () => {
           console.log("WebSocket connection opened.");
+
+          // Send metadata
           if (isSurvey) { 
+            // For survey answer
             sendSurveyQuestionData();
           } else{
+            // For example answer
             sendExampleData();
           }
 
+          // Set ASR language
           const langStore = useLanguageStore();
           if(langStore.language === 'en') {
             changeASRLanguage('en-US');
           } else {
             changeASRLanguage('cs-CZ');
-          }
-                   
+          } 
         };
+
+        // Handle incoming WebSocket messages - answer evaluation results
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
           
-          // Store values
+          // User skipped the question by voice
           if(data.skipped == true){
+            // Update ExampleView
             if (emitFunction) {
               emitFunction("skipped", {skipped: true});
             }
+          
+          // User terminated practice by voice
           } else if(data.finished == true){
+            // Update ExampleView
             if (emitFunction) {
               emitFunction("finished");
             }
+          
+          // User answered the question by voice
           } else {
             isCorrect.value = data.isCorrect;
             continueWithNext.value = data.continue_with_next;
             student_answer.value = data.student_answer;
+
+            // Update ExampleView
             if (emitFunction) {
               emitFunction("answerSent", {
                 isCorrect: data.isCorrect,
@@ -118,7 +147,6 @@ export const useRecorderStore = defineStore("recorder", () => {
               });
             }
           }
-          console.log("WebSocket message received:", data);
         };
       }
 
@@ -130,7 +158,6 @@ export const useRecorderStore = defineStore("recorder", () => {
       // Create AudioWorklet for processing audio
       const blob = new Blob([processorCode], { type: 'application/javascript' });
       const workletUrl = URL.createObjectURL(blob);
-      
       await audioContext.audioWorklet.addModule(workletUrl);
       
       workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
@@ -138,7 +165,7 @@ export const useRecorderStore = defineStore("recorder", () => {
       // Handle processed audio data from the worklet
       workletNode.port.onmessage = (event) => {
         if (ws?.readyState === WebSocket.OPEN) {
-          ws.send(event.data);
+          ws.send(event.data); // Send processed audio data to server
         }
       };
       
@@ -147,11 +174,12 @@ export const useRecorderStore = defineStore("recorder", () => {
       workletNode.connect(audioContext.destination);
       
       isRecording.value = true;
+
     } catch (error) {
       console.error("Error starting recording:", error);
     }
   };
-
+  // Stop the recording and clean up
   const stopRecording = () => {
     if (workletNode) {
       workletNode.disconnect();
@@ -177,6 +205,7 @@ export const useRecorderStore = defineStore("recorder", () => {
     isRecording.value = false;
   };
 
+  // Send metadata about current example
   const sendExampleData = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ 
@@ -188,7 +217,7 @@ export const useRecorderStore = defineStore("recorder", () => {
       }));
     }
   };
-
+  // Update metadata about practiced example and example record
   const updateExampleData = (studentId, exampleId, inputType, recordDate) => {
     student_id.value = studentId;
     example_id.value = exampleId;
@@ -197,6 +226,7 @@ export const useRecorderStore = defineStore("recorder", () => {
     sendExampleData();
   };
 
+  // Send metadata about survey question
   const sendSurveyQuestionData = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ 
@@ -208,24 +238,26 @@ export const useRecorderStore = defineStore("recorder", () => {
       }
   };
 
+  // Update metadata about survey question
   const updateSurveyQuestionData = (questionText, skills) => {
     question_text.value = questionText;
     skillsList.value = skills;
     sendSurveyQuestionData();
   };
 
+  // Change ASR language
   const changeASRLanguage = (language) => {
-
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ language }));
     }
   };
 
-
+  // Allow recording
   const allowRecording = () => {
     allowedRecording.value = true;
   };
 
+  // Close Websocket connection
   const closeWebSocket = () => {
     if (ws) {
       ws.close();
@@ -235,6 +267,7 @@ export const useRecorderStore = defineStore("recorder", () => {
     }
   };
 
+  // Cleanup when the component is unmounted
   onUnmounted(() => {
     console.log("Component unmounted, closing WebSocket...");
     allowedRecording.value = false;

@@ -1,8 +1,18 @@
 #!/usr/bin/env python
-"""Django's command-line utility for administrative tasks."""
+"""
+================================================================================
+ Module: manage.py
+ Description:
+        Djangos command-line utility for administrative tasks:
+        - running the server, 
+        - migrations
+        - shell access
+
+ Author: Dominik Horut (xhorut01)
+================================================================================
+"""
 import os
 import sys
-
 
 def main():
     """Run administrative tasks."""

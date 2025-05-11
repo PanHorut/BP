@@ -3,13 +3,35 @@ version: '3.8'
 services:
   web:
     build:
-      context: .  # The build context should be the root of your project, where the Dockerfile is located
-      dockerfile: Dockerfile  # Explicitly specify the Dockerfile if needed
+      context: .
+      dockerfile: Dockerfile
     restart: always
     command: uvicorn be.asgi:application --host 0.0.0.0 --port 8000 --reload
     environment:
-      - DJANGO_SETTINGS_MODULE=be.settings  # Make sure this points to the correct settings module
+      - DJANGO_SETTINGS_MODULE=be.settings
+      - MYSQLHOST=db
+      - MYSQLUSER=root
+      - MYSQLPASSWORD=secret
+      - MYSQLDATABASE=drillovacka-demo
+      - MYSQLPORT=3306
     volumes:
-      - .:/code  # Mount the 'be' folder to /code in the container
+      - .:/code
     ports:
-      - "8000:8000"  # Expose port 8000
+      - "8000:8000"
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: drillovacka-demo
+    ports:
+      - "3307:3306"  
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db_init:/docker-entrypoint-initdb.d  
+
+volumes:
+  db_data:

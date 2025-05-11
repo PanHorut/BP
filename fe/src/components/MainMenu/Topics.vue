@@ -1,3 +1,12 @@
+<!--
+================================================================================
+ Component: Topics.vue
+ Description:
+        Displays landing page skills and search bar to filter them by name.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+-->
+
 <script setup>
 import { onMounted, ref, computed } from 'vue';
 import { useTopicStore } from '@/stores/useMainpageTopicStore';
@@ -6,11 +15,13 @@ import Spinner from '../Spinner.vue';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { dictionary } from '@/utils/dictionary';
 
+// Load topics from cache
 const topicStore = useTopicStore();
-const searchQuery = ref('');
-
 const langStore = useLanguageStore();
 
+const searchQuery = ref('');
+
+// Show only skills that match the search query
 const filteredTopics = computed(() => {
   if (!searchQuery.value) return topicStore.topics;
   
@@ -19,6 +30,7 @@ const filteredTopics = computed(() => {
   );
 });
 
+// Get landing page skills
 onMounted(() => {
   topicStore.fetchTopics();
 });
@@ -26,9 +38,10 @@ onMounted(() => {
 
 <template>
   <div>
+    
     <Spinner v-if="topicStore.loading" class="pt-48" />
 
-    <!-- Enhanced Search Bar -->
+    <!-- Search Bar -->
     <div v-if="langStore.language == 'cs'" class="flex justify-center px-4 pt-10 md:pt-20">
       <div class="relative w-full max-w-lg">
         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-xl">
@@ -46,6 +59,7 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- Skills -->
     <div class="flex justify-center py-20 ">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-20 gap-y-10">
         <TopicCard 
@@ -56,5 +70,6 @@ onMounted(() => {
         />
       </div>
     </div>
+
   </div>
 </template>

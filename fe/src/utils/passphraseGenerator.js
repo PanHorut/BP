@@ -1,6 +1,15 @@
+/**
+ * ================================================================================
+ * File: passphraseGenerator.js
+ * Description:
+ *       Utility for generating Czech and English passphrases.
+ * Author: Dominik Horut (xhorut01)
+ * ================================================================================
+ */
+
 import seedrandom from "seedrandom";
 
-
+// Czech abilities, colors, and animals
 const abilitiesMasculine = ["vesely", "hravy", "mily", "zabavny", "radostny", "usmevavy", "pratelsky", "stastny", "energicky", "rozverny", "vynalezavy", "kouzelny", "hodny", "kouzelnicky", "sikovny", "bystry", "chytry", "zvedavy", "roztomily", "blaznivy", "neposedny", "pohodovy", "rozesmaty", "rozkosny", "hrdinsky", "napadity", "laskavy", "nezkazeny", "kamaradsky", "dobrosrdecny", "nadherny", "dobrodruzny", "hrdy", "odvazny", "skotacivy", "vtipny", "jedinecny", "slunecny"];
 const abilitiesFeminine = ["vesela", "hrava", "mila", "zabavna", "radostna", "usmevava", "pratelska", "stastna", "energicka", "rozverna", "vynalezava", "kouzelna", "hodna", "kouzelnicka", "sikovna", "bystra", "chytra", "zvedava", "roztomila", "blazniva", "neposedna", "pohodova", "rozesmata", "rozkosna", "hrdinska", "napadita", "laskava", "nezkazena", "kamaradska", "dobrosrdecna", "nadherna", "dobrodruzna", "nevinna", "hrda", "odvazna", "skotaciva", "vtipna", "jedinecna", "slunecna"];
 
@@ -8,8 +17,9 @@ const colorsMasculine = ["cerny", "modry", "zeleny", "zluty", "fialovy", "oranzo
 const colorsFeminine = ["cerna", "modra", "zelena", "zluta", "fialova", "oranzova", "ruzova", "bila", "hneda", "seda", "zlata", "stribrna", "bezova", "mentolova", "tyrkysova", "neonova", "olivova", "safirova", "kremova", "medena", "perletova", "zlatava"];
 
 const animalsMasculine = ["tygr", "slon", "lev", "krab", "pes", "vlk", "medved", "krokodyl","pstros", "labrador", "plamenak", "srnec", "delfin", "kockodan", "hroch", "byk", "krecek", "los", "jelen", "bizon", "kocour", "kolibrik", "pav", "albatros", "holub", "netopyr", "mroz", "papousek", "klokan"]
-const animalsFeminime = ["zirafa", "orlice", "kukacka", "koala", "panda", "sova", "liska", "vcela", "vydra", "antilopa", "opice", "koza", "slepice", "lama", "zebra", "mys", "velryba"]
+const animalsFeminine = ["zirafa", "orlice", "kukacka", "koala", "panda", "sova", "liska", "vcela", "vydra", "antilopa", "opice", "koza", "slepice", "lama", "zebra", "mys", "velryba"]
 
+// English abilities, colors, and animals
 const abilitiesEn = [
     "cheerful", "playful", "kind", "fun", "joyful", "smiling", "friendly", "happy", "energetic",
     "mischievous", "inventive", "magical", "good-hearted", "wizardly", "skillful", "sharp", "clever",
@@ -20,8 +30,8 @@ const abilitiesEn = [
 
 const colorsEn = [
     "black", "blue", "green", "yellow", "purple", "orange", "pink", "white", "brown", "gray", 
-    "yellow", "silver", "beige", "mint", "turquoise", "neon", "olive", "sapphire", "cream", 
-    "copper", "pearly", "golden"
+    "silver", "beige", "mint", "turquoise", "neon", "olive", "sapphire", "cream", "copper", 
+    "pearly", "golden"
 ];
 
 const animalsEn = [
@@ -32,15 +42,15 @@ const animalsEn = [
     "antelope", "monkey", "goat", "hen", "llama", "zebra", "mouse", "whale"
   ];
 
-
-  
-
 const getRandomItem = (arr, rng) => arr[Math.floor(rng() * arr.length)];
 
 const generatePassphrase = (language) => {
+    // Time-based seed for randomness
     let seed = Date.now().toString(); 
+
     const rng = seedrandom(seed);
-    
+
+    // Randomly select grammatical gender for Czech
     const gender = Math.random() < 0.5 ? "masculine" : "feminine";
 
     let ability, color, animal;
@@ -50,21 +60,19 @@ const generatePassphrase = (language) => {
             ability = getRandomItem(abilitiesMasculine, rng);
             color = getRandomItem(colorsMasculine, rng);
             animal = getRandomItem(animalsMasculine, rng);
+
         } else {
             ability = getRandomItem(abilitiesFeminine, rng);
             color = getRandomItem(colorsFeminine, rng);
-            animal = getRandomItem(animalsFeminime, rng);
+            animal = getRandomItem(animalsFeminine, rng);
         }
-        return `${ability}-${color}-${animal}`;
-
+        
     }else{
         ability = getRandomItem(abilitiesEn, rng);
         color = getRandomItem(colorsEn, rng);
         animal = getRandomItem(animalsEn, rng);
-        return `${ability}-${color}-${animal}`;
     }
-
-    
+    return `${ability}-${color}-${animal}`;
 };
 
 export default generatePassphrase;

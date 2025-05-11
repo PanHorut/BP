@@ -1,13 +1,25 @@
+<!--
+================================================================================
+ Component: Tips.vue
+ Description:
+        Displays tips how to enter answers by voice.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+-->
+
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 
 const showTips = ref(false);
+
 const isMobile = ref(false);
 
+// Toggle tips visibility
 const toggleShowTips = () => {
     showTips.value = !showTips.value;
 };
 
+// Check if the screen size is mobile to display close button of the tips
 const checkIfMobile = () => {
     isMobile.value = window.matchMedia('(max-width: 768px)').matches;
 };
@@ -26,6 +38,8 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="relative z-40">
+
+        <!-- Button to show tips -->
         <button 
             @click="isMobile ? toggleShowTips() : null" 
             @mouseenter="!isMobile ? showTips = true : null" 
@@ -39,11 +53,17 @@ onBeforeUnmount(() => {
         <div v-if="showTips" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
             w-11/12 md:w-1/2 bg-white border border-gray-300 shadow-2xl rounded-xl p-6 text-lg 
             text-gray-800  transition-all duration-300 ease-in-out">
+
             <h3 class="text-xl font-bold text-center mb-4 text-primary">Tipy pro zadávání hlasem</h3>
+
+            <!-- Close button for mobiles which cant use hover -->
             <button v-if="isMobile" @click="showTips = false" class="absolute top-4 right-4 text-4xl text-gray-500 hover:text-gray-700">
                 <i class="fas fa-times"></i>
             </button>
+
+            <!-- Tips -->
             <ul class="list-disc pl-6 space-y-8">
+
                 <li class="flex flex-col space-y-2 pb-2 border-b border-gray-300 text-[15px] md:text-lg">
                     <span class="flex items-center font-semibold">
                         Pro zadávání hlasem stiskni
@@ -62,18 +82,9 @@ onBeforeUnmount(() => {
                     </span>
                 </li>
 
-                <li class="flex flex-col space-y-1 pb-2 border-b border-gray-300 text-sm md:text-lg">
-                    <span class="font-semibold">Pokud je výsledek ve tvaru zlomku, vyslov jej jako:</span>
-                    <span class="ml-4"><span class="font-bold">čitatel LOMENO (nebo DĚLENO) jmenovatel</span></span>
-                    <span class="italic text-gray-500 ml-4">např. "dva lomeno tři", "osm děleno pět"</span>
-                </li>
-
-                <li class="flex flex-col space-y-1 text-sm md:text-lg">
-                    <span class="font-semibold">Výsledek proměnné vyslov jako:</span>
-                    <span class="ml-4"><span class="font-bold">název proměnné ROVNÁ SE (nebo JE) hodnota</span></span>
-                    <span class="italic text-gray-500 ml-4">např. "x je patnáct", "y je dva"</span>
-                </li>
             </ul>
+
         </div>
+        
     </div>
 </template>

@@ -1,6 +1,14 @@
+<!--
+================================================================================
+ Component: Survey.vue
+ Description:
+        Displays survey questions to user when using the application.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+-->
+
 <script setup>
 import { ref, defineEmits, defineProps, onMounted } from 'vue';
-
 import { useRecorderStore } from "@/stores/useRecorderStore";
 import { sendSurveyAnswer } from '@/api/apiClient';
 import SpeechVisualizer from './SpeechVisualizer.vue';
@@ -14,9 +22,16 @@ const props = defineProps({
   } 
 });
 
-const recorderStore = useRecorderStore();
 const selectedScale = ref(null);
+const emits = defineEmits(['hideSurvey']);
+const recorderStore = useRecorderStore();
+const langStore = useLanguageStore();
 
+// Index of current question
+const storedIndex = sessionStorage.getItem("surveyIndex");
+const index = ref(storedIndex ? parseInt(storedIndex, 10) : 0);
+
+// Toggle recording state
 const toggleRecording = () => {
 
   if (recorderStore.isRecording) {
@@ -26,14 +41,7 @@ const toggleRecording = () => {
   }
 };
 
-const emits = defineEmits(['hideSurvey']);
-
-const langStore = useLanguageStore();
-
-const storedIndex = sessionStorage.getItem("surveyIndex");
-
-const index = ref(storedIndex ? parseInt(storedIndex, 10) : 0);
-
+// Survey questions
 const questions = ref([
   { 
     text: { 
@@ -119,7 +127,7 @@ const questions = ref([
   }
 ]);
 
-
+// Clean up after question and prepare next one
 const handleNext = () => {
   if (recorderStore.isRecording) {
     recorderStore.stopRecording();
@@ -136,11 +144,18 @@ const handleNext = () => {
   emits('hideSurvey');
 }
 
+// Handle choice selection
 const handleChoiceSelection = async (choice) => {
   await sendSurveyAnswer('choice', questions.value[index.value].text, choice, props.topics);
   handleNext();
 }
 
+// Handle scale selection
+const handleScaleSelection = (num) => {
+  selectedScale.value = num;
+};
+
+// Send scale selection
 const sendScaleSelection = async () => {
   if (selectedScale.value === null) {
     return;
@@ -152,30 +167,31 @@ const sendScaleSelection = async () => {
 
 }
 
-const handleScaleSelection = (num) => {
-  selectedScale.value = num;
-  console.log("Selected scale:", selectedScale.value);
-};
-
 onMounted(() => {
   if (index.value >= 0 && index.value < questions.value.length) {
+    // Update the recorder store with the current question text
     recorderStore.updateSurveyQuestionData(questions.value[index.value].text, props.topics);
+
   } else {
     console.error("Invalid index value:", index.value);
   }
+
+  // Stop recording so user can answer when he is ready
   if (recorderStore.isRecording) {
     recorderStore.stopRecording();
   }
 });
-
 </script>
 
 <template>
   <div class="flex flex-col items-center justify-center pt-20 bg-white px-4 text-center ">
+
+    <!-- Question text -->
     <div class="text-xl md:text-3xl font-semibold text-primary bg-white shadow-xl rounded-xl p-6 w-full max-w-2xl z-20">
       {{ questions[index].text[langStore.language] }}
     </div>
 
+    <!-- Question instructions -->
     <div class="text-lg md:text-xl flex items-center justify-center mt-6 z-20 text-gray-700 italic">
       <span v-if="questions[index].type == 'voice'">{{dictionary[langStore.language].clickMicText}}</span>
       <span v-if="questions[index].type == 'choice'">{{dictionary[langStore.language].chooseOptionText}}</span>
@@ -184,6 +200,8 @@ onMounted(() => {
 
     <!-- Voice answer -->
     <div v-if="questions[index].type == 'voice'" class="flex flex-col items-center justify-center">
+
+      <!-- Button to toggle answer recording -->
       <button @click="toggleRecording"
         :class="recorderStore.isRecording ? 'bg-red-500 hover:bg-red-600 border-red-600' : 'bg-green-500 hover:bg-green-600 border-green-600'"
         class="w-24 h-24 mt-6 flex items-center justify-center rounded-full border-4 text-white text-2xl transition hover:scale-110 shadow-md focus:outline-none z-20"
@@ -191,10 +209,12 @@ onMounted(() => {
         <i :class="recorderStore.isRecording ? 'fas fa-stop' : 'fas fa-microphone'" class="text-4xl"></i>
       </button>
 
+      <!-- Vizualizer of voice input so he can see that audio is recorded -->
       <SpeechVisualizer class="-mt-12 md:mt-0 absolute md:relative z-0"
         :barColor="recorderStore.isRecording ? '#457b9d' : '#f1faee'" :width="300" :height="100" :barWidth="10"
         :barGap="8" :barCount="10" />
 
+      <!-- Button to continue after answering -->
       <button @click="handleNext"
         class="mt-8 bg-secondary hover:bg-primary text-white font-semibold py-3 px-6 rounded-lg text-2xl shadow-md transition hover:scale-105">
         {{dictionary[langStore.language].continue}}
@@ -204,7 +224,10 @@ onMounted(() => {
 
     <!-- Choice answer -->
     <div v-else-if="questions[index].type == 'choice'">
+
       <div class="flex flex-col md:flex-row items-center justify-center mt-6 space-y-8 md:space-y-0 md:space-x-16 max-w-lg w-full">
+
+        <!-- Choices -->
         <button @click="handleChoiceSelection(questions[index].a[langStore.language])"
           class="flex-1 bg-white hover:bg-primary text-primary hover:text-white border-4 border-primary font-semibold py-3 px-6 rounded-2xl text-2xl md:text-3xl shadow-md transition-all transform hover:scale-110 hover:shadow-lg active:scale-95 active:shadow-sm min-w-[160px] md:min-w-[200px]">
           {{ questions[index].a[langStore.language] }}
@@ -219,12 +242,16 @@ onMounted(() => {
           class="flex-1 bg-white hover:bg-primary text-primary hover:text-white border-4 border-primary font-semibold py-3 px-6 rounded-2xl text-2xl md:text-3xl shadow-md transition-all transform hover:scale-110 hover:shadow-lg active:scale-95 active:shadow-sm min-w-[160px] md:min-w-[200px]">
           {{ questions[index].c[langStore.language] }}
         </button>
+
       </div>
+
     </div>
+    <!-- Scale answer -->
     <div v-else-if="questions[index].type == 'scale'" class="flex flex-col items-center mt-6">
 
-
       <div class="flex flex-col justify-center items-center">
+
+        <!-- Scale options -->  
         <div class="flex space-x-4">
           <button v-for="num in 5" :key="num" @click="handleScaleSelection(num)"
             class="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-full border-4 font-bold text-xl md:text-2xl shadow-md transition-all transform hover:scale-110 active:scale-95"
@@ -232,6 +259,8 @@ onMounted(() => {
             {{ num }}
           </button>
         </div>
+
+        <!-- Butto to confirm selection -->
         <button @click="sendScaleSelection()"
           class="mt-8 font-semibold py-3 px-6 rounded-lg text-2xl shadow-md transition transform hover:scale-105"
           :class="selectedScale === null
@@ -239,7 +268,9 @@ onMounted(() => {
             : 'bg-secondary hover:bg-primary text-white cursor-pointer'" :disabled="selectedScale === null">
           {{ dictionary[langStore.language].continue }}
         </button>
+
       </div>
+      
     </div>
 
   </div>

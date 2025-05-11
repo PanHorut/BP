@@ -1,3 +1,13 @@
+<!--
+================================================================================
+ Component: TopicCard.vue
+ Description:
+        Displays landing page skill.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+-->
+
+
 <script setup>
 import { defineProps } from 'vue'
 import { useRouter } from 'vue-router'
@@ -18,6 +28,7 @@ const props = defineProps({
 const router = useRouter()
 const langStore = useLanguageStore()
 
+// Proceed to the topic detail page
 function goToTopicDetail() {
   router.push({ name: 'topic', params: { id: Number(props.id) } })
 }
@@ -30,9 +41,11 @@ function goToTopicDetail() {
            transition transform  hover:shadow-xl 
            hover:bg-secondary hover:border-secondary"
   >
+    <!-- Skill name -->
     <h2 class="flex justify-center text-3xl text-center font-bold text-primary p-4 
               transition duration-300 ease-in-out hover:text-white">
       {{ getSkillName(topic, langStore.language) }}
     </h2>
+    
   </div>
 </template>

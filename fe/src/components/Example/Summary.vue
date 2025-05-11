@@ -1,3 +1,12 @@
+<!--
+================================================================================
+ Component: Summary.vue
+ Description:
+        Displays summary of current practicing session.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+-->
+
 <script setup>
 import { defineProps, computed, ref } from 'vue';
 import { sendSurveyAnswer } from '@/api/apiClient';
@@ -35,14 +44,16 @@ const props = defineProps({
 const langStore = useLanguageStore();
 const router = useRouter();
 
-
+// Total number of practiced examples   
 const total = computed(() => {
     return props.skipped + props.noMistakes + props.oneMistake + props.twoMistakes + props.threeMistakes;
 });
 
+// Get the correct form of the word 'priklad' or 'example' depending on selected language
 const getCorrectForm = computed(() => {
     if (langStore.language === 'en') {
         return total.value === 1 ? 'example' : 'examples';
+
     } else {
         if (total.value === 1) {
             return 'příklad';
@@ -64,6 +75,8 @@ const percentages = computed(() => {
     };
 });
 
+
+// Emoji ratings so the user can rate the application   
 const selectedEmoji = ref(null);
 
 const emojiRatings = ref([
@@ -73,7 +86,7 @@ const emojiRatings = ref([
   { icon: "fas fa-smile-beam", label: { cs: "Super! Bavilo mě to.", en: "Great! I enjoyed it." } },
 ]);
 
-
+// Handle selected emoji rating - save the answer
 const handleEmojiSelection = async () => {
     if(langStore.language == 'en') router.push({ path: '/en' });
 
@@ -82,22 +95,20 @@ const handleEmojiSelection = async () => {
     }    
 
     await sendSurveyAnswer('summary', 'Jak se ti líbilo procvičování s touto aplikací?', emojiRatings.value[selectedEmoji.value].label, props.topics);  
-
-    
-
 }
-
 </script>
 
 <template>
-    <div
-        class="flex flex-col items-center justify-center mt-12 md:mt-24 md:border-4 md:border-secondary rounded-xl px-12 md:px-24 py-4 max-w-full">
+    <div class="flex flex-col items-center justify-center mt-12 md:mt-24 md:border-4 md:border-secondary rounded-xl px-12 md:px-24 py-4 max-w-full">
+
         <h1 class="text-5xl md:text-6xl font-bold text-primary">{{ dictionary[langStore.language].finish }}</h1>
+
+        <!-- Total number of practiced examples -->
         <h2 class="text-lg md:text-2xl font-semibold text-primary text-center mt-4">
             {{dictionary[langStore.language].exampleCountText}} {{ total }} {{ getCorrectForm }}
         </h2>
 
-        <!-- Multiple Value Bar -->
+        <!-- Bar indicating ratio of correctly answered examples, incorrect ones and skipped ones -->
         <div class="w-full md:max-w-3xl h-8 md:h-12 flex rounded-full overflow-hidden mt-8 md:mt-12">
             <!-- Skipped -->
             <div class="bg-gray-400 h-full" :style="{ width: percentages.skipped + '%' }"
@@ -144,6 +155,7 @@ const handleEmojiSelection = async () => {
             </div>
         </div>
 
+        <!-- Emoji rating section -->
         <div class="flex flex-col items-center my-8 md:my-12">
             <div class="flex justify-center text-center text-xl font-semibold mb-4">{{ dictionary[langStore.language].summarySurveyText }}</div>
             <div class="flex space-x-3 md:space-x-6">
@@ -163,7 +175,7 @@ const handleEmojiSelection = async () => {
             </div>
         </div>
 
-
+        <!-- Button to go back to main menu and save rating -->
         <div class="flex justify-center mt-12 md:mt-16 mb-6 w-full">
             <RouterLink to="/"
                 @click="handleEmojiSelection"
@@ -171,5 +183,6 @@ const handleEmojiSelection = async () => {
                 {{ dictionary[langStore.language].backtoMainMenu }}
             </RouterLink>
         </div>
+
     </div>
 </template>

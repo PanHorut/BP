@@ -1,4 +1,12 @@
-# api/serializers.py
+"""
+================================================================================
+ Module: serializers.py
+ Description: 
+        Defines serializers for converting model instances to and from JSON format
+ Author: Dominik Horut (xhorut01)
+================================================================================
+"""
+
 from rest_framework import serializers
 from . import models
 
@@ -12,26 +20,6 @@ class SkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Skill
         fields = '__all__' 
-
-class ExampleSkillSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.ExampleSkill
-        fields = ['example', 'skill']
-
-class TaskSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Task
-        fields = '__all__' 
-
-class AnswerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Answer
-        fields = '__all__' 
-
-class StudentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Student
-        fields = '__all__'
 
 class RecordInitSerializer(serializers.ModelSerializer):
     class Meta:

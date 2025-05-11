@@ -1,9 +1,17 @@
-import generatePassphrase from "./passphraseGenerator";
+/**
+ * ================================================================================
+ * File: dictionary.js
+ * Description:
+ *       Utility for handling Czech-English translation of application.
+ * Author: Dominik Horut (xhorut01)
+ * ================================================================================
+ */
 
+// Dictionary of Czech and English translations for various application strings
 export const dictionary = {
     cs: {
         logo: "DRILLOVAČKA",
-        login: "Přihlásit se", 
+        login: "Přihlásit se",
         register: "Registrovat se",
         registerText: "Ještě nemám účet - registrovat se",
         loginText: "Už mám účet - přihlásit se",
@@ -29,10 +37,10 @@ export const dictionary = {
         generatePassphrase: "Vygenerovat kód",
         generatePassphrasePlaceholder: "Vygeneruj si svůj přístupový kód",
         copied: "Zkopírováno",
-        hi: "Ahoj", 
+        hi: "Ahoj",
         profile: "Profil",
         chooseTopic: "Jaké příklady chceš procvičit?",
-        chooseOperation: "Vyber operace, které chceš procvičit",   
+        chooseOperation: "Vyber operace, které chceš procvičit",
         startPractice: "Jdeme na to",
         quit: "Ukončit",
         done: "Hotovo",
@@ -40,12 +48,12 @@ export const dictionary = {
         correctAnswer: "Správná odpověď",
         finish: "Hotovo!",
         exampleCountText: "Spočítal jsi",
-        backtoMainMenu: "Zpět na hlavní stránku", 
-        noMistakes: "Bez chyby",  
-        oneMistake: "Jedna chyba", 
-        twoMistakes: "Dvě chyby", 
+        backtoMainMenu: "Zpět na hlavní stránku",
+        noMistakes: "Bez chyby",
+        oneMistake: "Jedna chyba",
+        twoMistakes: "Dvě chyby",
         threeMistakes: "Tři chyby",
-        skipped: "Přeskočeno",  
+        skipped: "Přeskočeno",
         continue: "Pokračovat",
         summarySurveyText: "Jak se ti líbilo procvičování s touto aplikací?",
         clickMicText: "Klikni na mikrofon a odpověz prosím na otázku",
@@ -69,7 +77,7 @@ export const dictionary = {
         part2: "part 2",
         part3: "part 3",
         usernameError: "Please enter a username.",
-        usernameForgot: "You forgot to create a username",    
+        usernameForgot: "You forgot to create a username",
         passphraseError: "Please enter all parts of the passphrase.",
         passphraseForgot: "You need to generate an access code first",
         loginSuccess: "Login was successful",
@@ -78,15 +86,15 @@ export const dictionary = {
         somethingWentWrong: "Something went wrong. Please try again later.",
         logout: "Logout",
         logoutSuccess: "Logout was successful",
-        inactivityLogout: "You have been logged out due to inactivity", 
+        inactivityLogout: "You have been logged out due to inactivity",
         generatePassphrase: "Generate passphrase",
         generatePassphrasePlaceholder: "Generate your passphrase",
-        copied: "Copied",   
+        copied: "Copied",
         hi: "Hi",
         profile: "Profile",
         chooseTopic: "What examples do you want to practice?",
-        chooseOperation: "Select the operations you want to practice", 
-        startPractice: "Let's go",  
+        chooseOperation: "Select the operations you want to practice",
+        startPractice: "Let's go",
         quit: "Quit",
         done: "Done",
         skip: "Skip",
@@ -94,22 +102,27 @@ export const dictionary = {
         finish: "That's it!",
         exampleCountText: "You counted",
         backtoMainMenu: "Back to main menu",
-        noMistakes: "No mistake",  
-        oneMistake: "One mistake", 
-        twoMistakes: "Two mistakes", 
+        noMistakes: "No mistake",
+        oneMistake: "One mistake",
+        twoMistakes: "Two mistakes",
         threeMistakes: "Three mistakes",
-        skipped: "Skipped",  
+        skipped: "Skipped",
         continue: "Continue",
         summarySurveyText: "How did you like practicing with this app?",
         clickMicText: "Click on the microphone and please answer the question",
-        chooseOptionText: "Choose the option that applies to you",  
-        searchPlaceholderText: "Type the name of the exercise you are looking for", 
-
-
+        chooseOptionText: "Choose the option that applies to you",
+        searchPlaceholderText: "Type the name of the exercise you are looking for",
     }
-  };
+};
 
-  export const getSkillName = (czechName, lang) => {
+/**
+ * Translates a skill name from Czech to English depending on the selected language.
+ * 
+ * @param {string} czechName - name of the skill in Czech
+ * @param {string} lang - language code ('cs' or 'en')
+ * @returns {string} translated skill name
+ */
+export const getSkillName = (czechName, lang) => {
     const skillMap = {
         "Sčítání": "Addition",
         "Odčítání": "Subtraction",
@@ -133,7 +146,6 @@ export const dictionary = {
         "Desetiny": "Decimals",
         "Poměry": "Ratio"
     };
-      
+
     return lang === "cs" ? czechName : skillMap[czechName] || czechName;
-  };
-  
+};

@@ -1,3 +1,13 @@
+<!--
+================================================================================
+ Component: ToastManager.vue
+ Description:
+        Manager for displaying multiple toast messages using a shared store.
+        Renders all active toasts.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+-->
+
 <script setup>
 import { useToastStore } from '@/stores/useToastStore';
 import Toast from './Toast.vue';
@@ -11,8 +21,9 @@ const removeToast = (index) => {
 </script>
 
 <template>
+
   <div>
-    <!-- Loop through toasts and display them -->
+    <!-- Loop through all toasts in the store and render them -->
     <Toast
       v-for="(toast, index) in toastStore.toasts"
       :key="index"
@@ -22,4 +33,5 @@ const removeToast = (index) => {
       @close="removeToast(index)"
     />
   </div>
+  
 </template>

@@ -1,13 +1,18 @@
-import './assets/main.css';
+/*
+================================================================================
+ File: main.js
+ Description:
+        Entry point of the application which sets it up.
+ Author: Dominik Horut (xhorut01)
+================================================================================
+*/
 
+
+import './assets/main.css';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import { useAuthStore } from '@/stores/useAuthStore';
-import VueApexCharts from 'vue3-apexcharts'
-
-
-
 import App from './App.vue';
 import router from './router';
 
@@ -16,8 +21,6 @@ const pinia = createPinia();
 
 app.use(pinia);
 app.use(router);
-app.use(VueApexCharts)
-
 
 app.mount('#app');
 

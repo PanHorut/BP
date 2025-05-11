@@ -1,19 +1,22 @@
-# BP Frontend
+# Frontend part
+**Author:** Dominik Horut (`xhorut01`)
 
-## Project Setup
+## Frontend build & run instructions
 
+### 1. Install dependencies
 ```sh
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+### 2. Start the development server
+This will start the application locally at http://localhost:5173:
 
 ```sh
 npm run dev
 ```
 
-### Compile and Minify for Production
-
+### 3. Build for Production
+Compile and minify the project for production deployment:
 ```sh
 npm run build
 ```
