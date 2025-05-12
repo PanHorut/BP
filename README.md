@@ -48,26 +48,45 @@ Assuming you are in root directory of application:
 cd be
 ```
 
-### 2. Build the containers
+### 2. Environment setup
+
+Configure the required environment variables in your `.env` file:
+
+```sh
+MYSQLDATABASE=drillovacka-demo
+MYSQLUSER=root
+MYSQLPASSWORD=secret
+MYSQLHOST=localhost
+MYSQLPORT=3307
+```
+
+Additionally, the application uses **Azure Speech-to-Text** and **Gemini** services. To authenticate these services, add your respective API keys to the `.env` file:
+```sh
+AZURE_API_KEY=YOUR_AZURE_API_KEY
+AZURE_REGION=YOUR_AZURE_REGION
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+```
+
+### 3. Build the containers
 Build the server and database containers:
 
 ```bash
 docker-compose build --no-cache
 ```
-### 3. Start the containers
+### 4. Start the containers
 Start the server and MySQL database:
 
 ```bash
 docker-compose up
 ```
-### 4. Access the application
+### 5. Access the application
 Visit http://localhost:8000/ to access the application. 
 
 To use admin part of application, login with these credentials:
 - **Username:** admin1
 - **Password:** kockanenipes
 
-### 5. Clean up
+### 6. Clean up
 Stop and remove containers, volumes, and networks used by docker-compose:
 ```bash
 docker-compose down --volumes --remove-orphans
